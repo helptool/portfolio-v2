@@ -146,7 +146,6 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
       if (!Ctor) return
       const ctx = new Ctor()
       const master = ctx.createGain()
-      master.gain.value = 0
       master.connect(ctx.destination)
       const bedGain = ctx.createGain()
       bedGain.gain.value = 0.6
@@ -154,7 +153,14 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
       const bedNodes = buildBed(ctx, bedGain)
       graphRef.current = { ctx, master, bedGain, bedNodes }
       // Fade master in over 1.6s so toggle-on isn't a thump.
-      master.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.6)
+      // Anchor with setValueAtTime first :: per Web Audio spec, a ramp
+      // with no preceding automation event uses an implementation-
+      // defined start value (some older WebKit builds use the
+      // GainNode default of 1.0, which would ramp DOWN from full
+      // volume — the opposite of intent).
+      const t = ctx.currentTime
+      master.gain.setValueAtTime(0, t)
+      master.gain.linearRampToValueAtTime(0.5, t + 1.6)
       setReady(true)
     } catch {
       /* WebAudio unavailable */
