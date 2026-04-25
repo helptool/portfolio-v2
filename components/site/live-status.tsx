@@ -27,12 +27,20 @@ export function LiveStatus() {
     } catch {
       /* private mode */
     }
-    // Listen for late-stage konami unlocks while user is on the page.
+    // Listen for late-stage konami unlocks while the user is on the page.
+    // Two listeners :: `storage` covers OTHER tabs (cross-tab unlock),
+    // and the custom `vaish:konami` event covers the SAME tab (the
+    // browser's storage event spec excludes the originating tab).
     const onStorage = (e: StorageEvent) => {
       if (e.key === "vaish.konami" && e.newValue === "1") setKonami(true)
     }
+    const onKonami = () => setKonami(true)
     window.addEventListener("storage", onStorage)
-    return () => window.removeEventListener("storage", onStorage)
+    window.addEventListener("vaish:konami", onKonami)
+    return () => {
+      window.removeEventListener("storage", onStorage)
+      window.removeEventListener("vaish:konami", onKonami)
+    }
   }, [])
 
   return (

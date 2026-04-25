@@ -115,11 +115,15 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   const teardown = useCallback(() => {
     const g = graphRef.current
     if (!g) return
-    g.bedNodes.forEach((n) => n.stop())
+    // Schedule the master fade FIRST, then stop bed nodes after the fade
+    // completes. Stopping the source nodes before the gain ramp would cut
+    // audio dead and produce an audible click — the ramp had nothing left
+    // to fade.
     try {
       g.master.gain.linearRampToValueAtTime(0, g.ctx.currentTime + 0.25)
     } catch {}
     setTimeout(() => {
+      g.bedNodes.forEach((n) => n.stop())
       try { g.ctx.close() } catch {}
     }, 300)
     graphRef.current = null
@@ -192,16 +196,24 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
     osc2.stop(t + dur + 0.05)
   }, [enabled])
 
-  // Resume context on first gesture if user toggled on but we lost it.
+  // Returning visitors :: localStorage said "1" so `enabled` hydrated to
+  // true, but no audio graph exists yet (Chrome autoplay policy requires
+  // a user gesture). On the first pointerdown, lazily build the graph.
+  // If the graph already exists but is suspended (tab backgrounded),
+  // just resume it.
   useEffect(() => {
     if (!enabled) return
-    const resume = () => {
+    const onGesture = () => {
       const g = graphRef.current
-      if (g && g.ctx.state === "suspended") g.ctx.resume()
+      if (!g) {
+        init()
+        return
+      }
+      if (g.ctx.state === "suspended") g.ctx.resume()
     }
-    window.addEventListener("pointerdown", resume, { once: true })
-    return () => window.removeEventListener("pointerdown", resume)
-  }, [enabled, ready])
+    window.addEventListener("pointerdown", onGesture, { once: true })
+    return () => window.removeEventListener("pointerdown", onGesture)
+  }, [enabled, ready, init])
 
   const value = useMemo<SoundCtx>(() => ({ enabled, ready, toggle, tick }), [enabled, ready, toggle, tick])
 

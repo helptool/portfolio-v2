@@ -51,6 +51,10 @@ export function KonamiSecret() {
         if (pointer === SEQUENCE.length) {
           pointer = 0
           try { localStorage.setItem(STORAGE_KEY, "1") } catch {}
+          // The browser's `storage` event only fires in OTHER tabs, so
+          // dispatch a custom event for in-tab listeners (e.g.
+          // <LiveStatus />) to surface the rune badge without a reload.
+          try { window.dispatchEvent(new CustomEvent("vaish:konami")) } catch {}
           setOpen(true)
         }
       } else if (e.code === SEQUENCE[0]) {
