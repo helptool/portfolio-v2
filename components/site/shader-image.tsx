@@ -78,12 +78,17 @@ float noise(vec2 p) {
 }
 
 // "object-cover" UV remap so the image fills the canvas without distortion.
+// aspect = imgAspect / containerAspect.
+//   aspect > 1 :: image is wider than container shape — crop the width by
+//                 sampling a narrower x range (divide, since aspect > 1).
+//   aspect < 1 :: image is taller than container shape — crop the height
+//                 (multiply, since aspect < 1 shrinks |c.y|).
 vec2 coverUV(vec2 uv, float aspect) {
   vec2 c = uv - 0.5;
   if (aspect > 1.0) {
-    c.x *= aspect;
+    c.x /= aspect;
   } else {
-    c.y /= aspect;
+    c.y *= aspect;
   }
   return c + 0.5;
 }
