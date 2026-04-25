@@ -49,6 +49,25 @@ export function CustomCursor() {
       }
     }
 
+    /* Spurious re-render guard :: detect fires on EVERY mouseover (every
+       child element entered). Without this guard, hovering across a paragraph
+       full of links would trigger one React re-render per character. We
+       remember the last committed (mode, label) tuple in a ref and only call
+       setState when it actually changes. The motion-value ringSize.set is
+       cheap and idempotent so we don't bother guarding it. */
+    let lastMode: CursorMode = "default"
+    let lastLabel = ""
+    const commitMode = (next: CursorMode, lbl: string) => {
+      if (next !== lastMode) {
+        lastMode = next
+        setMode(next)
+      }
+      if (lbl !== lastLabel) {
+        lastLabel = lbl
+        setLabel(lbl)
+      }
+    }
+
     const detect = (e: MouseEvent) => {
       const t = e.target as HTMLElement | null
       if (!t) return
@@ -56,14 +75,12 @@ export function CustomCursor() {
       if (el) {
         const c = (el.dataset.cursor as CursorMode) || "hover"
         const lbl = el.dataset.cursorLabel || ""
-        setMode(c)
-        setLabel(lbl)
+        commitMode(c, lbl)
         if (c === "view" || c === "enter") ringSize.set(120)
         else if (c === "drag") ringSize.set(96)
         else ringSize.set(64)
       } else {
-        setMode("default")
-        setLabel("")
+        commitMode("default", "")
         ringSize.set(40)
       }
     }

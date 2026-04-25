@@ -1,6 +1,17 @@
 "use client"
 
 import Image from "next/image"
+import dynamic from "next/dynamic"
+import { SHIMMER } from "@/lib/shimmer"
+
+/* Lazy load the shader-image so the WebGL host JS only ships once the
+   manifesto enters the viewport. SSR is disabled because WebGL has no
+   server-side equivalent; the same module also exports a plain <Image>
+   fallback for SSR via its own internal default render. */
+const ShaderImage = dynamic(
+  () => import("./shader-image").then((m) => ({ default: m.ShaderImage })),
+  { ssr: false, loading: () => null },
+)
 import Link from "next/link"
 import {
   motion,
@@ -113,13 +124,33 @@ function PortraitPlate() {
     <motion.div ref={ref} style={{ y: liftY }} className="relative">
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-md border border-foreground/10 bg-foreground/[0.03]">
         <motion.div style={{ scale: zoom }} className="absolute inset-0">
+          {/* SSR + before-shader fallback :: plain priority image so SEO
+              crawlers and visitors with reduced-motion / no WebGL still
+              see the portrait. */}
           <Image
             src="/operator/portrait.jpg"
             alt={t("op.portraitAlt")}
             fill
             sizes="(max-width: 1024px) 80vw, 40vw"
             className="object-cover"
+            placeholder="blur"
+            blurDataURL={SHIMMER}
             priority
+          />
+          {/* WebGL displacement layer :: paints over the fallback once the
+              shader is live. baseWarp/hoverWarp dialed conservatively so
+              the face only gets a soft liquid-glass shimmer, not a horror
+              warp. Chromatic aberration blooms around the cursor. */}
+          <ShaderImage
+            src="/operator/portrait.jpg"
+            alt=""
+            fill
+            sizes="(max-width: 1024px) 80vw, 40vw"
+            className="absolute inset-0"
+            style={{ objectFit: "cover" }}
+            baseWarp={0.018}
+            hoverWarp={0.028}
+            chromaticAberration={0.008}
           />
         </motion.div>
 
@@ -197,6 +228,8 @@ function SquarePlate({ src, captionKey, code }: { src: string; captionKey: strin
         fill
         sizes="(max-width: 1024px) 50vw, 24vw"
         className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
+        placeholder="blur"
+        blurDataURL={SHIMMER}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent mix-blend-multiply" />
       <div className="absolute inset-0 mix-blend-soft-light bg-gradient-to-br from-primary/12 via-transparent to-transparent" />

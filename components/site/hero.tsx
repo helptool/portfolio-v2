@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { SHIMMER } from "@/lib/shimmer"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import {
@@ -801,7 +802,16 @@ export function Hero() {
                    md:right-[10%] md:bottom-[14%] md:top-auto md:block md:w-[14vw] md:max-w-[200px]"
       >
         <div className="relative h-full w-full frame-hairline overflow-hidden glow-ember">
-          <Image src="/works/orbital.jpg" alt="" fill sizes="(max-width: 768px) 26vw, 14vw" className="object-cover" />
+          <Image
+            src="/works/orbital.jpg"
+            alt=""
+            fill
+            sizes="(max-width: 768px) 26vw, 14vw"
+            className="object-cover"
+            placeholder="blur"
+            blurDataURL={SHIMMER}
+            priority
+          />
           {!reduce && (
             <motion.span
               aria-hidden
