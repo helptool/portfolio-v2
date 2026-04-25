@@ -105,11 +105,15 @@ export function FinalCTA() {
             if (!value) return
             setError(null)
             startTransition(async () => {
-              const res = await submitContact(value)
-              if (res.ok) {
-                setSent(true)
-              } else {
-                setError(ERROR_COPY[res.error] ?? "Something went wrong.")
+              try {
+                const res = await submitContact(value)
+                if (res.ok) {
+                  setSent(true)
+                } else {
+                  setError(ERROR_COPY[res.error] ?? "Something went wrong.")
+                }
+              } catch {
+                setError(ERROR_COPY.send_failed)
               }
             })
           }}
