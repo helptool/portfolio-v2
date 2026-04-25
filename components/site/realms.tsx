@@ -9,6 +9,7 @@ import {
   useTransform,
 } from "framer-motion"
 import Image from "next/image"
+import { RevealImage } from "./reveal-image"
 import { SHIMMER } from "@/lib/shimmer"
 import { useMemo, useRef, useState } from "react"
 import { realms } from "@/lib/vaish"
@@ -150,14 +151,22 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
           transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
         >
-          <Image
+          {/* RevealImage :: the visible realm IS the present-tense reading;
+              the cursor-porthole reveals the same image with a "memory"
+              filter (desaturated, sepia-warm, dimmed) — the realm as it
+              was Untold. Same src so we don't double-fetch; the visual
+              difference is pure CSS filter. */}
+          <RevealImage
             src={realm.image}
+            revealSrc={realm.image}
             alt={realm.name}
+            revealAlt=""
+            revealLabel="Untold"
+            portholeSize={260}
             fill
             sizes="100vw"
-            className="object-cover"
-            placeholder="blur"
-            blurDataURL={SHIMMER}
+            className="object-cover h-full w-full"
+            revealClassName="object-cover [filter:grayscale(0.85)_sepia(0.45)_brightness(0.78)_contrast(1.05)]"
             priority={index === 0}
           />
         </motion.div>
