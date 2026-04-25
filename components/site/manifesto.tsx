@@ -26,6 +26,7 @@ import { useEffect, useRef, useState, type MouseEvent } from "react"
 import { brand } from "@/lib/vaish"
 import { useT } from "./i18n-context"
 import { SectionAtmosphere } from "./section-atmosphere"
+import { ScrollWeight } from "./scroll-weight"
 
 /* ---------------------------------------------------------------------------
  * About Operator :: a brief, cinematic introduction to Aryaman.
@@ -356,15 +357,23 @@ export function Manifesto() {
           ref={headRef}
           className="font-wordmark-tight mt-6 text-balance text-[clamp(56px,9vw,128px)] font-semibold leading-[0.92]"
         >
-          {headlineWords.map((w, i) => {
-            const start = i / headlineWords.length
-            const end = start + 1.4 / headlineWords.length
-            return (
-              <HeadlineWord key={i} progress={scrollYProgress} range={[start, end]} accent={accentSet.has(w)}>
-                {w}
-              </HeadlineWord>
-            )
-          })}
+          {/* ScrollWeight :: Bodoni Moda is loaded as a variable font in
+              app/layout.tsx, so the wght axis interpolates continuously
+              from 500..880 with scroll velocity. Settles back to 500
+              over ~600ms. The per-word HeadlineWord reveals are
+              independent and continue to work since opacity/y are
+              orthogonal to fontVariationSettings. */}
+          <ScrollWeight as="span" min={500} max={880} threshold={75}>
+            {headlineWords.map((w, i) => {
+              const start = i / headlineWords.length
+              const end = start + 1.4 / headlineWords.length
+              return (
+                <HeadlineWord key={i} progress={scrollYProgress} range={[start, end]} accent={accentSet.has(w)}>
+                  {w}
+                </HeadlineWord>
+              )
+            })}
+          </ScrollWeight>
         </h2>
       </div>
 

@@ -4,6 +4,9 @@ import "./globals.css"
 import { ArcadeProvider } from "@/components/site/arcade/arcade-context"
 import { I18nProvider } from "@/components/site/i18n-context"
 import { CloudflareAnalytics } from "@/components/site/cf-analytics"
+import { SoundProvider } from "@/components/site/sound-context"
+import { SoundToggle } from "@/components/site/sound-toggle"
+import { KonamiSecret } from "@/components/site/konami"
 
 const SITE_URL = "https://portfolio-v2.paidtoolsdrive.workers.dev"
 
@@ -35,11 +38,12 @@ const jetbrains = JetBrains_Mono({
   fallback: ["ui-monospace", "SF Mono", "Menlo", "Consolas", "monospace"],
 })
 // Bodoni Moda: razor-sharp high-contrast display serif with dramatic strokes.
-// Edgy, editorial, and aligned with the dark-realm theme.
+// Edgy, editorial, and aligned with the dark-realm theme. Loaded as a
+// variable font so ScrollWeight can interpolate the `wght` axis continuously
+// (400..900) instead of snapping to the nearest static instance.
 const bodoni = Bodoni_Moda({
   subsets: ["latin"],
   style: ["normal", "italic"],
-  weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-wordmark",
   display: "swap",
   adjustFontFallback: "Times New Roman",
@@ -138,7 +142,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
         />
         <I18nProvider>
-          <ArcadeProvider>{children}</ArcadeProvider>
+          <SoundProvider>
+            <ArcadeProvider>{children}</ArcadeProvider>
+            {/* Sound toggle (top-right, default OFF) and Konami easter
+                egg listener live outside the page tree so they survive
+                route changes when we add them in PR B. */}
+            <SoundToggle />
+            <KonamiSecret />
+          </SoundProvider>
         </I18nProvider>
         <CloudflareAnalytics />
       </body>

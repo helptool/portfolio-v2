@@ -9,6 +9,8 @@ import { brand, navItems } from "@/lib/vaish"
 import { cn } from "@/lib/utils"
 import { useI18n } from "./i18n-context"
 import { WordmarkCycle } from "./wordmark-cycle"
+import { Magnetic } from "./magnetic"
+import { useSound } from "./sound-context"
 
 /**
  * Footer
@@ -28,6 +30,7 @@ import { WordmarkCycle } from "./wordmark-cycle"
  */
 export function Footer() {
   const { meta: current, languages, setLang, t } = useI18n()
+  const sound = useSound()
   const [hoverCode, setHoverCode] = useState<string | null>(null)
   const hoverMeta = hoverCode ? languages.find((l) => l.code === hoverCode) : null
   const activeMeta = hoverMeta ?? current
@@ -197,23 +200,26 @@ export function Footer() {
 
             <div className="mt-8 flex items-center gap-3">
               {socials.map((s) => (
-                <a
-                  key={s.code}
-                  href={s.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={s.label}
-                  data-cursor="hover"
-                  data-cursor-label={s.label}
-                  className="group relative flex h-10 w-10 items-center justify-center overflow-hidden border border-foreground/25 bg-background/30 text-foreground/85 backdrop-blur-sm transition-colors hover:border-primary hover:text-primary"
-                >
-                  {s.icon}
-                  {/* Tiny corner accent that lights up on hover */}
-                  <span aria-hidden className="absolute left-0 top-0 h-1.5 w-1.5 border-l border-t border-primary/0 transition-colors duration-300 group-hover:border-primary" />
-                  <span aria-hidden className="absolute right-0 bottom-0 h-1.5 w-1.5 border-r border-b border-primary/0 transition-colors duration-300 group-hover:border-primary" />
-                  {/* Sheen on hover */}
-                  <span aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-primary/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                </a>
+                <Magnetic key={s.code} strength={0.32}>
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={s.label}
+                    data-cursor="hover"
+                    data-cursor-label={s.label}
+                    onMouseEnter={() => sound.tick("soft")}
+                    onClick={() => sound.tick("select")}
+                    className="group relative flex h-10 w-10 items-center justify-center overflow-hidden border border-foreground/25 bg-background/30 text-foreground/85 backdrop-blur-sm transition-colors hover:border-primary hover:text-primary"
+                  >
+                    {s.icon}
+                    {/* Tiny corner accent that lights up on hover */}
+                    <span aria-hidden className="absolute left-0 top-0 h-1.5 w-1.5 border-l border-t border-primary/0 transition-colors duration-300 group-hover:border-primary" />
+                    <span aria-hidden className="absolute right-0 bottom-0 h-1.5 w-1.5 border-r border-b border-primary/0 transition-colors duration-300 group-hover:border-primary" />
+                    {/* Sheen on hover */}
+                    <span aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-primary/25 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                  </a>
+                </Magnetic>
               ))}
             </div>
 
