@@ -39,14 +39,18 @@ const COMPLETE_EVENT = "vaish:runes-complete"
 
 export function RunesProvider({ children }: { children: React.ReactNode }) {
   const [found, setFound] = useState<Set<RuneId>>(() => new Set())
-  // Track whether localStorage has been hydrated. The very first persist
-  // effect runs while `found` is still the initial empty Set — without
-  // this guard we would clobber a returning visitor's saved runes back
-  // to empty before the hydrate effect commits its readRunes() result.
-  const hydratedRef = useRef(false)
-  // Track the previous size so the persist effect can fire COMPLETE_EVENT
-  // exactly once per honest 4→5 transition.
+  // `hydrated` lives in state (not a ref) so the persist effect can
+  // depend on it. React batches `setFound(initial)` + `setHydrated(true)`
+  // below into a single re-render, which means the persist effect's
+  // first non-skipped run sees the hydrated `found` — not the empty
+  // initial Set that the previous ref-based version exposed.
+  const [hydrated, setHydrated] = useState(false)
+  // Tracks the previous size so the persist effect can fire COMPLETE_EVENT
+  // exactly once per honest 4→5 transition. Primed inside the persist
+  // effect on its first hydrated run so a returning visitor with all
+  // five runes doesn't re-fire the celebration on every page load.
   const prevSizeRef = useRef(0)
+  const persistPrimedRef = useRef(false)
 
   // Hydrate from localStorage on mount and listen for cross-tab updates.
   // We deliberately do NOT listen to the same-tab `RUNES_EVENT` here:
@@ -57,9 +61,9 @@ export function RunesProvider({ children }: { children: React.ReactNode }) {
   // The cross-tab `storage` event is the only legitimate input here.
   useEffect(() => {
     const initial = readRunes()
+    // Auto-batched into one re-render; persist effect sees both at once.
     setFound(initial)
-    prevSizeRef.current = initial.size
-    hydratedRef.current = true
+    setHydrated(true)
 
     const onStorage = (e: StorageEvent) => {
       if (e.key === RUNES_STORAGE_KEY) setFound(readRunes())
@@ -74,7 +78,16 @@ export function RunesProvider({ children }: { children: React.ReactNode }) {
   // listeners mid-render, and StrictMode's double-invocation would
   // produce double localStorage writes + double event dispatches.
   useEffect(() => {
-    if (!hydratedRef.current) return
+    if (!hydrated) return
+    if (!persistPrimedRef.current) {
+      // First commit after hydration. The hydrated `found` already matches
+      // localStorage, so writing it back is a no-op and dispatching the
+      // completion event would mis-fire on returning 5/5 visitors. Just
+      // prime the size cursor and bail.
+      persistPrimedRef.current = true
+      prevSizeRef.current = found.size
+      return
+    }
     writeRunes(found)
     if (found.size === RUNE_IDS.length && prevSizeRef.current < RUNE_IDS.length) {
       try {
@@ -82,7 +95,7 @@ export function RunesProvider({ children }: { children: React.ReactNode }) {
       } catch {}
     }
     prevSizeRef.current = found.size
-  }, [found])
+  }, [found, hydrated])
 
   const hasRune = useCallback((id: RuneId) => found.has(id), [found])
 
