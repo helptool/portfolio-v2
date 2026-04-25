@@ -78,7 +78,11 @@ export function LetterTilt({
       window.removeEventListener("pointermove", onMove)
       if (raf) cancelAnimationFrame(raf)
     }
-  }, [reduced, maxTilt, radius])
+    // `children` is in deps so the effect re-runs when the i18n language
+    // switches and the subline string changes (lengths vary 39..143 chars
+    // across en/es/fr/ja/hi). Without it, the captured DOM refs would
+    // point at unmounted spans and getBoundingClientRect would return 0s.
+  }, [reduced, maxTilt, radius, children])
 
   if (reduced) {
     // Flat fallback :: render plain text, no listeners attached.
