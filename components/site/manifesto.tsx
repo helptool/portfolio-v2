@@ -27,6 +27,7 @@ import { brand } from "@/lib/vaish"
 import { useT } from "./i18n-context"
 import { SectionAtmosphere } from "./section-atmosphere"
 import { ScrollWeight } from "./scroll-weight"
+import { useRunes } from "./runes-context"
 
 /* ---------------------------------------------------------------------------
  * About Operator :: a brief, cinematic introduction to Aryaman.
@@ -292,6 +293,11 @@ export function Manifesto() {
   const headlineWords = t("op.headline").split(" ")
   const accentSet = new Set(t("op.headlineAccent").split("|").filter(Boolean))
 
+  // Loom rune trigger :: clicking the central ᛟ glyph in the rune strip
+  // unlocks "loom". The strip is decorative on most surfaces so this
+  // doesn't conflict with any existing interactions.
+  const { addRune } = useRunes()
+
   return (
     <section
       id="manifesto"
@@ -336,20 +342,30 @@ export function Manifesto() {
           </motion.div>
         </div>
 
-        {/* Mobile-only rune strip :: a small cinematic flourish before the
-           headline so the section feels ceremonious even on phones. */}
+        {/* Rune strip :: a small cinematic flourish before the headline.
+            Originally mobile-only; now visible at every size because the
+            ᛟ glyph is a hidden meta-game trigger and we want it
+            discoverable on desktop too. The ᛟ is a real button that
+            unlocks the "loom" rune; the others are decorative spans. */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.6 }}
           transition={{ duration: 0.9, ease: easeOut }}
-          className="mt-5 flex items-center gap-3 sm:hidden"
+          className="mt-5 flex items-center gap-3"
         >
           <span className="block h-px flex-1 bg-foreground/10" />
-          <span className="font-display text-lg text-foreground/60">ᚦ</span>
-          <span className="font-display text-lg text-primary">ᚱ</span>
-          <span className="font-display text-lg text-foreground/60">ᚹ</span>
-          <span className="font-display text-lg text-foreground/40">ᛟ</span>
+          <span aria-hidden className="font-display text-lg text-foreground/60">ᚦ</span>
+          <span aria-hidden className="font-display text-lg text-primary">ᚱ</span>
+          <span aria-hidden className="font-display text-lg text-foreground/60">ᚹ</span>
+          <button
+            type="button"
+            onClick={() => addRune("loom")}
+            aria-label="Hidden rune"
+            className="font-display text-lg text-foreground/40 transition-colors hover:text-primary focus-visible:outline-none focus-visible:text-primary"
+          >
+            ᛟ
+          </button>
           <span className="block h-px flex-1 bg-foreground/10" />
         </motion.div>
 

@@ -11,9 +11,10 @@ import {
 import Image from "next/image"
 import { RevealImage } from "./reveal-image"
 import { SHIMMER } from "@/lib/shimmer"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { realms } from "@/lib/vaish"
 import { useT } from "./i18n-context"
+import { useRunes } from "./runes-context"
 
 /* ---------------------------------------------------------------------------
  * Realms :: scroll-driven horizontal carousel with STRICT scroll snap.
@@ -89,6 +90,54 @@ export function Realms() {
     setActive(i)
   })
 
+  // Vow rune trigger :: hold the cursor still over a realm card for 6
+  // continuous seconds. "Still" means within a 16px movement budget — pure
+  // pointerleave detection would be too easy and pixel-exact stillness
+  // would be unreasonable. Cancels on scroll, on slide change, or on
+  // pointerleave.
+  const { addRune, hasRune } = useRunes()
+  const vowTimerRef = useRef<number | null>(null)
+  const vowOriginRef = useRef<{ x: number; y: number } | null>(null)
+  useEffect(() => {
+    // Reset on slide change so each realm needs its own dwell.
+    if (vowTimerRef.current !== null) {
+      window.clearTimeout(vowTimerRef.current)
+      vowTimerRef.current = null
+      vowOriginRef.current = null
+    }
+  }, [active])
+
+  const onCarouselEnter = (e: React.PointerEvent) => {
+    if (hasRune("vow")) return
+    vowOriginRef.current = { x: e.clientX, y: e.clientY }
+    vowTimerRef.current = window.setTimeout(() => {
+      addRune("vow")
+    }, 6000)
+  }
+  const onCarouselMove = (e: React.PointerEvent) => {
+    if (!vowOriginRef.current || vowTimerRef.current === null) return
+    const dx = e.clientX - vowOriginRef.current.x
+    const dy = e.clientY - vowOriginRef.current.y
+    if (dx * dx + dy * dy > 16 * 16) {
+      // Movement exceeded the stillness budget; restart the dwell from
+      // the new position. This is more forgiving than a hard cancel —
+      // honest stillness gets credited even after slight cursor drift.
+      window.clearTimeout(vowTimerRef.current)
+      vowOriginRef.current = { x: e.clientX, y: e.clientY }
+      vowTimerRef.current = window.setTimeout(() => addRune("vow"), 6000)
+    }
+  }
+  const onCarouselLeave = () => {
+    if (vowTimerRef.current !== null) {
+      window.clearTimeout(vowTimerRef.current)
+      vowTimerRef.current = null
+      vowOriginRef.current = null
+    }
+  }
+  useEffect(() => () => {
+    if (vowTimerRef.current !== null) window.clearTimeout(vowTimerRef.current)
+  }, [])
+
   return (
     <section
       id="realms"
@@ -96,7 +145,12 @@ export function Realms() {
       className="relative bg-background"
       style={{ height: `${N * VIEWPORT_PER_SLIDE * 100}vh` }}
     >
-      <div className="sticky top-0 h-[100svh] overflow-hidden">
+      <div
+        className="sticky top-0 h-[100svh] overflow-hidden"
+        onPointerEnter={onCarouselEnter}
+        onPointerMove={onCarouselMove}
+        onPointerLeave={onCarouselLeave}
+      >
         {/* Top HUD row */}
         <div className="pointer-events-none absolute left-0 right-0 top-24 z-20 flex items-start justify-between px-5 md:top-28 md:px-10">
           <div className="flex items-center gap-3">

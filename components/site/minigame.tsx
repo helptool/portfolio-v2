@@ -35,6 +35,16 @@ export function MiniGame() {
   const { playerName } = useArcade()
   const t = useT()
 
+  // Tab transitions are handled by the three AnimatePresence mode="wait"
+  // instances below (panel header, active-game canvas, leaderboard).
+  // We deliberately do NOT wrap setActive in startViewTransition here:
+  // the View Transition crossfade and AnimatePresence's exit/enter
+  // animations would run against the same state change, fighting for
+  // the same pixels and producing a 360ms-delayed pop on Chromium-
+  // based browsers. AnimatePresence wins because it works everywhere.
+  // (View Transitions remain useful for the i18n switcher in
+  // i18n-context.tsx, where there is no competing animation system.)
+
   return (
     <section id="play" className="contain-section relative w-full bg-noise py-20 sm:py-28 lg:py-32 overflow-hidden">
       {/* Premium ambient atmosphere :: arcade haze + drifting embers */}

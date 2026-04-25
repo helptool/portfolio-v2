@@ -15,6 +15,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useEffect, useState } from "react"
+import { useRunes } from "./runes-context"
 
 const SEQUENCE = [
   "ArrowUp",
@@ -34,6 +35,7 @@ const STORAGE_KEY = "vaish.konami"
 export function KonamiSecret() {
   const [open, setOpen] = useState(false)
   const reduced = useReducedMotion()
+  const { count, total, addRune } = useRunes()
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -50,11 +52,16 @@ export function KonamiSecret() {
         pointer++
         if (pointer === SEQUENCE.length) {
           pointer = 0
+          // Legacy flag :: keep writing it so older callers (LiveStatus's
+          // direct localStorage check, plus any third-party screenshots
+          // floating around) still see the unlock. RunesProvider also
+          // migrates this flag → "dawn" on hydrate.
           try { localStorage.setItem(STORAGE_KEY, "1") } catch {}
           // The browser's `storage` event only fires in OTHER tabs, so
           // dispatch a custom event for in-tab listeners (e.g.
           // <LiveStatus />) to surface the rune badge without a reload.
           try { window.dispatchEvent(new CustomEvent("vaish:konami")) } catch {}
+          addRune("dawn")
           setOpen(true)
         }
       } else if (e.code === SEQUENCE[0]) {
@@ -65,7 +72,7 @@ export function KonamiSecret() {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [])
+  }, [addRune])
 
   // Allow Esc to close.
   useEffect(() => {
@@ -116,7 +123,7 @@ export function KonamiSecret() {
               </div>
               <div>
                 <div className="text-primary/75">// rune count</div>
-                1 / 5
+                {count} / {total}
               </div>
             </div>
             <button

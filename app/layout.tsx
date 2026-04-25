@@ -7,6 +7,8 @@ import { CloudflareAnalytics } from "@/components/site/cf-analytics"
 import { SoundProvider } from "@/components/site/sound-context"
 import { SoundToggle } from "@/components/site/sound-toggle"
 import { KonamiSecret } from "@/components/site/konami"
+import { RunesProvider } from "@/components/site/runes-context"
+import { EchoVault } from "@/components/site/echo-vault"
 
 const SITE_URL = "https://portfolio-v2.paidtoolsdrive.workers.dev"
 
@@ -143,12 +145,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
         <I18nProvider>
           <SoundProvider>
-            <ArcadeProvider>{children}</ArcadeProvider>
-            {/* Sound toggle (top-right, default OFF) and Konami easter
-                egg listener live outside the page tree so they survive
-                route changes when we add them in PR B. */}
-            <SoundToggle />
-            <KonamiSecret />
+            <RunesProvider>
+              <ArcadeProvider>{children}</ArcadeProvider>
+              {/* Sound toggle, Konami listener, and Echo Vault live outside
+                  the page tree so they're untouched by section transitions.
+                  EchoVault is the all-five-runes celebration overlay; mounts
+                  silently and only paints when the completion event fires. */}
+              <SoundToggle />
+              <KonamiSecret />
+              <EchoVault />
+            </RunesProvider>
           </SoundProvider>
         </I18nProvider>
         <CloudflareAnalytics />
