@@ -164,14 +164,28 @@ export function ShaderImage({
     const gl = canvas.getContext("webgl", { antialias: true, premultipliedAlpha: true })
     if (!gl) return
 
+    /* Track every GL resource we allocate so we can dispose any partial
+       state if a later step fails. Without this, a CORS or link failure
+       would leak shaders/program/buffer/texture until the WebGL context
+       is GC'd with the canvas — which only happens when the component
+       unmounts. */
     const vert = compileShader(gl, gl.VERTEX_SHADER, VERT)
     const frag = compileShader(gl, gl.FRAGMENT_SHADER, FRAG)
-    if (!vert || !frag) return
+    if (!vert || !frag) {
+      if (vert) gl.deleteShader(vert)
+      if (frag) gl.deleteShader(frag)
+      return
+    }
     const program = gl.createProgram()!
     gl.attachShader(program, vert)
     gl.attachShader(program, frag)
     gl.linkProgram(program)
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      gl.deleteProgram(program)
+      gl.deleteShader(vert)
+      gl.deleteShader(frag)
+      return
+    }
 
     /* Fullscreen quad. Two triangles, four vertices. */
     const buffer = gl.createBuffer()!
@@ -202,8 +216,14 @@ export function ShaderImage({
     try {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
     } catch {
-      /* CORS may block uploading the image to the GPU. In that case the
-         shader stays unmounted and the visitor sees the plain image. */
+      /* CORS may block uploading the image to the GPU. Dispose every
+         resource allocated above and bail — the visitor sees the plain
+         <Image> fallback instead. */
+      gl.deleteTexture(tex)
+      gl.deleteBuffer(buffer)
+      gl.deleteProgram(program)
+      gl.deleteShader(vert)
+      gl.deleteShader(frag)
       return
     }
 
