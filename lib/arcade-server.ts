@@ -70,7 +70,7 @@ type D1Stmt = {
 }
 type D1 = {
   prepare: (sql: string) => D1Stmt
-  batch: (stmts: D1Stmt[]) => Promise<unknown>
+  batch: (stmts: D1Stmt[]) => Promise<D1RunResult[]>
 }
 
 function db(): D1 {
@@ -214,22 +214,30 @@ export async function submit(opts: {
     createdAt: now,
   }
 
-  // Atomic claim: only the request whose UPDATE actually flips submitted from
-  // 0 -> 1 is allowed to insert. Concurrent requests for the same session
-  // observe meta.changes === 0 and bail out before writing a duplicate score.
-  const claim = await d
-    .prepare("UPDATE arcade_sessions SET submitted = 1 WHERE id = ?1 AND submitted = 0")
-    .bind(sess.id)
-    .run()
-  if ((claim.meta?.changes ?? 0) === 0) {
+  // Atomic claim + insert in a single D1 transaction. Both statements are
+  // gated on submitted=0, so:
+  //   - If the session is unclaimed, both INSERT and UPDATE write a row each.
+  //     batch() commits them together.
+  //   - If a concurrent request already claimed it, neither writes (changes=0
+  //     on both) and we bail out cleanly.
+  //   - If any statement throws (D1 transient error etc), batch() rolls the
+  //     whole transaction back. The session is NOT burned, so the user can
+  //     retry without losing their score.
+  const results = await d.batch([
+    d
+      .prepare(
+        "INSERT INTO arcade_scores (id, game, name, score, stats, created_at) " +
+          "SELECT ?1, ?2, ?3, ?4, ?5, ?6 " +
+          "WHERE EXISTS (SELECT 1 FROM arcade_sessions WHERE id = ?7 AND submitted = 0)"
+      )
+      .bind(row.id, row.game, row.name, row.score, JSON.stringify(stats), row.createdAt, sess.id),
+    d
+      .prepare("UPDATE arcade_sessions SET submitted = 1 WHERE id = ?1 AND submitted = 0")
+      .bind(sess.id),
+  ])
+  if ((results[0]?.meta?.changes ?? 0) === 0) {
     return { ok: false, reason: "Session already submitted." }
   }
-  await d
-    .prepare(
-      "INSERT INTO arcade_scores (id, game, name, score, stats, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)"
-    )
-    .bind(row.id, row.game, row.name, row.score, JSON.stringify(stats), row.createdAt)
-    .run()
 
   const top = await getTop(row.game)
   const rank = top.findIndex((r) => r.id === row.id)
