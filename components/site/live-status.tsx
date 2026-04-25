@@ -8,40 +8,18 @@
  * Subtle by design :: small mono caption + one bullet line. No heading.
  * Visitors who don't notice it are fine; visitors who do, notice.
  *
- * Konami flag :: if the user typed the konami code, we surface a small
- * "rune found" badge alongside.
+ * Rune counter :: if at least one rune is found, surface a small
+ * `N / 5 ◆ runes` badge alongside. Reads through the RunesProvider so
+ * it stays in sync across late-stage unlocks (same-tab + cross-tab).
  * ------------------------------------------------------------------------- */
 
 import { motion, useReducedMotion } from "framer-motion"
-import { useEffect, useState } from "react"
 import { liveStatus } from "@/lib/status"
+import { useRunes } from "./runes-context"
 
 export function LiveStatus() {
-  const [konami, setKonami] = useState(false)
   const reduced = useReducedMotion()
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    try {
-      setKonami(localStorage.getItem("vaish.konami") === "1")
-    } catch {
-      /* private mode */
-    }
-    // Listen for late-stage konami unlocks while the user is on the page.
-    // Two listeners :: `storage` covers OTHER tabs (cross-tab unlock),
-    // and the custom `vaish:konami` event covers the SAME tab (the
-    // browser's storage event spec excludes the originating tab).
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "vaish.konami" && e.newValue === "1") setKonami(true)
-    }
-    const onKonami = () => setKonami(true)
-    window.addEventListener("storage", onStorage)
-    window.addEventListener("vaish:konami", onKonami)
-    return () => {
-      window.removeEventListener("storage", onStorage)
-      window.removeEventListener("vaish:konami", onKonami)
-    }
-  }, [])
+  const { count, total } = useRunes()
 
   return (
     <motion.div
@@ -58,9 +36,12 @@ export function LiveStatus() {
           <span className="text-foreground/65 normal-case tracking-[0.04em]">
             {liveStatus.building}
           </span>
-          {konami && (
-            <span className="rounded-full border border-primary/55 px-2 py-[2px] text-primary tracking-[0.22em]">
-              ◆ rune
+          {count > 0 && (
+            <span
+              className="rounded-full border border-primary/55 px-2 py-[2px] text-primary tracking-[0.22em]"
+              title={`Runes found: ${count} of ${total}`}
+            >
+              {count} / {total} ◆ {count === total ? "ignited" : "runes"}
             </span>
           )}
         </div>

@@ -12,11 +12,22 @@ import {
   useSpring,
   useReducedMotion,
 } from "framer-motion"
+import dynamic from "next/dynamic"
 import { brand } from "@/lib/vaish"
 import { Magnetic } from "./magnetic"
 import { LetterTilt } from "./letter-tilt"
 import { ScrollWeight } from "./scroll-weight"
 import { useT } from "./i18n-context"
+import { useRunes } from "./runes-context"
+
+// Lazy-loaded WebGL ember field. Excluded from SSR + the hero's initial
+// client bundle; the GPU work only kicks off after hydration. Falls back
+// to nothing during SSR (the page already has the legacy CSS particle
+// layer below as a paint-time placeholder while the chunk loads).
+const ParticleFieldGL = dynamic(
+  () => import("./particle-field-gl").then((m) => m.ParticleFieldGL),
+  { ssr: false }
+)
 
 const easeOut = [0.16, 1, 0.3, 1] as const
 
@@ -126,6 +137,28 @@ export function Hero() {
   const reduce = useReducedMotion() ?? false
   const t = useT()
   const time = useUtcTime()
+  const { addRune, hasRune } = useRunes()
+
+  // Tide rune trigger :: five clicks on the wordmark within 3s. The ref
+  // pattern (instead of state) keeps clicks out of the React render path —
+  // the H1 has heavy framer transforms attached and re-rendering on every
+  // click would drop frames. Resets on the first click of a fresh window.
+  const tideRef = useRef<{ count: number; firstAt: number }>({ count: 0, firstAt: 0 })
+  const onWordmarkClick = () => {
+    if (hasRune("tide")) return
+    const now = performance.now()
+    const ledger = tideRef.current
+    if (ledger.count === 0 || now - ledger.firstAt > 3000) {
+      ledger.count = 1
+      ledger.firstAt = now
+    } else {
+      ledger.count++
+      if (ledger.count >= 5) {
+        addRune("tide")
+        ledger.count = 0
+      }
+    }
+  }
 
   // Scroll progress through the hero, smoothed via spring for buttery output.
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] })
@@ -240,10 +273,14 @@ export function Hero() {
         className="pointer-events-none absolute -left-[10%] -right-[10%] h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent"
       />
 
-      {/* Mobile-only ambient particles for visual density. Kept lighter so
-          the central seal reads as the focal point without competition. */}
-      <div className="pointer-events-none absolute inset-0 opacity-70 md:hidden">
+      {/* Ambient ember field. WebGL points layer (lazy-loaded post-hydration);
+          falls back to the deterministic CSS particles during SSR + chunk
+          load so there's no empty frame. Mobile gets a lower point count
+          and the loop self-suspends if frames blow the 32ms budget — see
+          ParticleFieldGL's frame-budget gate. */}
+      <div className="pointer-events-none absolute inset-0 opacity-70">
         <ParticleField count={12} />
+        <ParticleFieldGL className="pointer-events-none absolute inset-0" />
       </div>
 
       {/* ============================================================ *
@@ -856,6 +893,7 @@ export function Hero() {
         </motion.div>
 
         <h1
+          onClick={onWordmarkClick}
           className="font-wordmark-tight text-[clamp(86px,22vw,340px)] font-semibold leading-[0.82] text-foreground"
           style={{ letterSpacing: "-0.035em", fontFeatureSettings: "'kern' 1, 'liga' 1" }}
         >

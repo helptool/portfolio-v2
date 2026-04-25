@@ -305,3 +305,44 @@
     }
   }
 }
+
+/* ===========================================================================
+ * Native View Transitions :: tuned crossfade for state-driven view changes
+ * (language switcher, arcade tab swap). Wrapped in @supports so older
+ * browsers ignore the rules entirely (they fall back to instant swaps).
+ *
+ * Why a custom curve and not the UA default
+ *   The default UA crossfade is ~250ms linear, which on a heavy section
+ *   like the hero or arcade reads as a pop. Swapping to a 360ms cubic
+ *   ease-out reads as deliberate without crossing into "slow".
+ * =========================================================================== */
+@supports (view-transition-name: root) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 360ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  ::view-transition-old(root) {
+    animation-name: vt-fade-out;
+  }
+  ::view-transition-new(root) {
+    animation-name: vt-fade-in;
+  }
+  @keyframes vt-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  @keyframes vt-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /* Reduced motion :: collapse the duration so the swap is effectively
+       instant. Browsers honour this without us having to detect the
+       preference in JS. */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 1ms;
+    }
+  }
+}

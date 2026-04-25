@@ -1,16 +1,29 @@
 "use client"
 
 import { motion, useScroll, useTransform } from "framer-motion"
-import { useRef } from "react"
+import { useCallback, useRef } from "react"
 import { chapters } from "@/lib/vaish"
 import { useT } from "./i18n-context"
 import { SectionAtmosphere } from "./section-atmosphere"
+import { useRunes } from "./runes-context"
 
 export function Codex() {
   const t = useT()
   const ref = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 0.8", "end 0.3"] })
   const lineScale = useTransform(scrollYProgress, [0, 1], [0, 1])
+
+  // Embers rune trigger :: every chronicle chapter scrolled into view at
+  // least once. We use a Set ref + onViewportEnter callback per row so
+  // re-views during a single session don't fire React state updates. The
+  // rune unlocks once the set covers the full chapter list.
+  const { addRune, hasRune } = useRunes()
+  const seenRef = useRef<Set<number>>(new Set())
+  const onChapterSeen = useCallback((index: number) => {
+    if (hasRune("embers")) return
+    seenRef.current.add(index)
+    if (seenRef.current.size >= chapters.length) addRune("embers")
+  }, [addRune, hasRune])
 
   return (
     <section id="codex" className="contain-section relative overflow-hidden bg-background py-28 md:py-40">
@@ -46,7 +59,7 @@ export function Codex() {
 
           <ul className="col-span-12 flex flex-col">
             {chapters.map((c, i) => (
-              <ChapterRow key={c.num} data={c} index={i} t={t} />
+              <ChapterRow key={c.num} data={c} index={i} t={t} onSeen={onChapterSeen} />
             ))}
           </ul>
         </div>
@@ -55,12 +68,23 @@ export function Codex() {
   )
 }
 
-function ChapterRow({ data, index, t }: { data: (typeof chapters)[number]; index: number; t: (k: string) => string }) {
+function ChapterRow({
+  data,
+  index,
+  t,
+  onSeen,
+}: {
+  data: (typeof chapters)[number]
+  index: number
+  t: (k: string) => string
+  onSeen: (i: number) => void
+}) {
   const yearText = (data as any).yearKey ? t((data as any).yearKey) : data.year
   return (
     <motion.li
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
+      onViewportEnter={() => onSeen(index)}
       viewport={{ once: true, amount: 0.4 }}
       transition={{ duration: 0.9, delay: 0.05 * index, ease: [0.22, 1, 0.36, 1] }}
       className="group relative grid grid-cols-12 gap-6 border-b border-foreground/10 py-10 first:border-t md:py-14"
