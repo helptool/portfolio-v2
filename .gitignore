@@ -14,3 +14,12 @@ next.user-config.*
 node_modules
 .next/
 .DS_Store
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Cloudflare Workers / OpenNext (build outputs and local-only)
+.dev.vars
+.open-next/
+.wrangler/
+cloudflare-env.d.ts
