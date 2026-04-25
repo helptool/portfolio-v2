@@ -18,9 +18,8 @@ node_modules
 # TypeScript incremental build cache
 *.tsbuildinfo
 
-# Cloudflare Workers / OpenNext (auto-generated on each deploy)
-wrangler.jsonc
-open-next.config.ts
+# Cloudflare Workers / OpenNext (build outputs and local-only)
 .dev.vars
 .open-next/
 .wrangler/
+cloudflare-env.d.ts
