@@ -61,11 +61,12 @@ function sign(payload: string) {
 
 // Minimal local typing for the D1 binding so we don't take a hard dependency
 // on @cloudflare/workers-types. Mirrors the shape used here only.
+type D1RunResult = { meta?: { changes?: number } }
 type D1Stmt = {
   bind: (...values: unknown[]) => D1Stmt
   first: <T = unknown>() => Promise<T | null>
   all: <T = unknown>() => Promise<{ results?: T[] }>
-  run: () => Promise<unknown>
+  run: () => Promise<D1RunResult>
 }
 type D1 = {
   prepare: (sql: string) => D1Stmt
@@ -212,14 +213,22 @@ export async function submit(opts: {
     createdAt: now,
   }
 
-  await d.batch([
-    d.prepare("UPDATE arcade_sessions SET submitted = 1 WHERE id = ?1").bind(sess.id),
-    d
-      .prepare(
-        "INSERT INTO arcade_scores (id, game, name, score, stats, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)"
-      )
-      .bind(row.id, row.game, row.name, row.score, JSON.stringify(stats), row.createdAt),
-  ])
+  // Atomic claim: only the request whose UPDATE actually flips submitted from
+  // 0 -> 1 is allowed to insert. Concurrent requests for the same session
+  // observe meta.changes === 0 and bail out before writing a duplicate score.
+  const claim = await d
+    .prepare("UPDATE arcade_sessions SET submitted = 1 WHERE id = ?1 AND submitted = 0")
+    .bind(sess.id)
+    .run()
+  if ((claim.meta?.changes ?? 0) === 0) {
+    return { ok: false, reason: "Session already submitted." }
+  }
+  await d
+    .prepare(
+      "INSERT INTO arcade_scores (id, game, name, score, stats, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)"
+    )
+    .bind(row.id, row.game, row.name, row.score, JSON.stringify(stats), row.createdAt)
+    .run()
 
   const top = await getTop(row.game)
   const rank = top.findIndex((r) => r.id === row.id)
