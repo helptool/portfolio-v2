@@ -14,6 +14,8 @@ import {
 } from "framer-motion"
 import { brand } from "@/lib/vaish"
 import { Magnetic } from "./magnetic"
+import { LetterTilt } from "./letter-tilt"
+import { ScrollWeight } from "./scroll-weight"
 import { useT } from "./i18n-context"
 
 const easeOut = [0.16, 1, 0.3, 1] as const
@@ -941,7 +943,9 @@ export function Hero() {
               <ScrambleWord word={t("hero.scramble3").toUpperCase()} delay={1900} />
             </p>
             <p className="italic-serif mt-3 text-[19px] sm:text-[26px] text-foreground/85 leading-snug">
-              {t("hero.subline")}
+              {/* LetterTilt :: each char in the subline tilts toward cursor.
+                  Subtle (3°) so it reads "alive" rather than "gimmick". */}
+              <LetterTilt maxTilt={3} radius={300}>{t("hero.subline")}</LetterTilt>
             </p>
           </motion.div>
 

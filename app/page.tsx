@@ -16,6 +16,7 @@ import { RuneDivider } from "@/components/site/rune-divider"
 import { SectionReveal } from "@/components/site/section-reveal"
 import { IntroLoader } from "@/components/site/loader"
 import { SmoothScroll } from "@/components/site/smooth-scroll"
+import { LiveStatus } from "@/components/site/live-status"
 
 // MiniGame ships ~2300 LOC of canvas/Framer game logic. Code-split so the
 // chunk only loads when the visitor scrolls past the codex into the arcade.
@@ -78,6 +79,10 @@ export default function Page() {
 
       <Ticker />
       <FinalCTA />
+      {/* LiveStatus :: subtle "currently working on" caption above the
+          footer. Reads from lib/status.ts so future updates are a tiny
+          one-line diff, not a full content rewrite. */}
+      <LiveStatus />
       <Footer />
     </main>
   )

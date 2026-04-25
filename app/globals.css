@@ -70,7 +70,25 @@
     text-rendering: optimizeLegibility;
   }
   html { scroll-behavior: auto; }
-  ::selection { background: oklch(0.74 0.15 52 / 0.45); color: oklch(0.98 0.01 80); }
+  /* ::selection :: copper-bronze gradient via background-image (allowed
+     in CSS Pseudo-Elements L4). Three-stop gradient sweeps from hot
+     copper through dim bronze back to bright copper. text-shadow
+     adds a faint copper glow on the selected glyph for warmth. */
+  ::selection {
+    background-color: oklch(0.74 0.15 52 / 0.55);
+    background-image: linear-gradient(
+      105deg,
+      oklch(0.82 0.18 60 / 0.6) 0%,
+      oklch(0.66 0.12 38 / 0.55) 50%,
+      oklch(0.74 0.15 52 / 0.6) 100%
+    );
+    color: oklch(0.98 0.01 80);
+    text-shadow: 0 0 14px oklch(0.74 0.15 52 / 0.55);
+  }
+  ::-moz-selection {
+    background-color: oklch(0.74 0.15 52 / 0.55);
+    color: oklch(0.98 0.01 80);
+  }
 
   /* Hide native cursor on pointer-fine devices so custom cursor takes over */
   @media (hover: hover) and (pointer: fine) {
