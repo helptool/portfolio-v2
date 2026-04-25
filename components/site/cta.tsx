@@ -3,14 +3,24 @@
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
-import { useRef, useState, type MouseEvent } from "react"
+import { useRef, useState, useTransition, type MouseEvent } from "react"
 import { Magnetic } from "./magnetic"
 import { useT } from "./i18n-context"
 import { SectionAtmosphere } from "./section-atmosphere"
+import { submitContact } from "@/app/actions/contact"
+
+const ERROR_COPY: Record<string, string> = {
+  invalid_email: "That doesn't look like a valid email.",
+  missing_config: "Mailer not configured. Try the email link below.",
+  send_failed: "Couldn't send right now. Try again or use the email link below.",
+  rate_limited: "Too many sends from this address. Wait a minute and try again.",
+}
 
 export function FinalCTA() {
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
   const t = useT()
 
   return (
@@ -90,7 +100,18 @@ export function FinalCTA() {
           transition={{ duration: 0.9, delay: 0.3 }}
           onSubmit={(e) => {
             e.preventDefault()
-            if (email.trim()) setSent(true)
+            if (sent || isPending) return
+            const value = email.trim()
+            if (!value) return
+            setError(null)
+            startTransition(async () => {
+              const res = await submitContact(value)
+              if (res.ok) {
+                setSent(true)
+              } else {
+                setError(ERROR_COPY[res.error] ?? "Something went wrong.")
+              }
+            })
           }}
           className="relative mt-20 flex max-w-[820px] flex-col items-stretch gap-3 border-b border-foreground/15 pb-5 md:flex-row md:items-end md:gap-6"
         >
@@ -103,23 +124,33 @@ export function FinalCTA() {
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={sent}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (error) setError(null)
+              }}
+              disabled={sent || isPending}
               placeholder="you@studio.world"
               data-cursor="hover"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "signal-error" : undefined}
               className="w-full bg-transparent font-display text-3xl text-foreground placeholder:text-foreground/25 focus:outline-none md:text-5xl"
             />
+            {error ? (
+              <p id="signal-error" role="alert" className="font-hud text-[11px] text-red-400/90">
+                {error}
+              </p>
+            ) : null}
           </div>
           <Magnetic strength={0.35}>
             <button
               type="submit"
-              disabled={sent}
+              disabled={sent || isPending}
               data-cursor="enter"
               data-cursor-label={sent ? t("contact.sent") : t("contact.send")}
               className="group relative inline-flex h-[64px] items-center gap-4 self-start rounded-full bg-primary pl-7 pr-3 text-primary-foreground transition-opacity disabled:opacity-70 overflow-hidden"
             >
               <span className="relative z-10 font-hud text-[11px]">
-                {sent ? t("contact.sentLong") : t("contact.sendLong")}
+                {sent ? t("contact.sentLong") : isPending ? "Sending…" : t("contact.sendLong")}
               </span>
               <span className="relative z-10 flex h-[46px] w-[46px] items-center justify-center rounded-full bg-primary-foreground/15">
                 <svg
