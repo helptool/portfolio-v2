@@ -1,14 +1,8 @@
 "use client"
 
-import { useCallback, useState } from "react"
-import { flushSync } from "react-dom"
+import { useState } from "react"
 import dynamic from "next/dynamic"
 import { AnimatePresence, motion } from "framer-motion"
-
-// Native View Transitions :: see i18n-context for the full rationale.
-type ViewTransitionDoc = Document & {
-  startViewTransition?: (cb: () => void) => unknown
-}
 import { arcade } from "@/lib/vaish"
 import { useT } from "./i18n-context"
 import { LeaderboardPanel } from "./arcade/leaderboard"
@@ -41,22 +35,15 @@ export function MiniGame() {
   const { playerName } = useArcade()
   const t = useT()
 
-  // Wrap tab switches in startViewTransition so the active panel
-  // crossfades into the next instead of the AnimatePresence pop. The
-  // browser captures snapshots of the old + new DOM and runs the
-  // ::view-transition-old/new keyframes from globals.css. flushSync
-  // is required for React 19's async state batching.
-  const switchTab = useCallback((id: GameId) => {
-    if (id === active) return
-    if (typeof document !== "undefined") {
-      const doc = document as ViewTransitionDoc
-      if (doc.startViewTransition) {
-        doc.startViewTransition(() => flushSync(() => setActive(id)))
-        return
-      }
-    }
-    setActive(id)
-  }, [active])
+  // Tab transitions are handled by the three AnimatePresence mode="wait"
+  // instances below (panel header, active-game canvas, leaderboard).
+  // We deliberately do NOT wrap setActive in startViewTransition here:
+  // the View Transition crossfade and AnimatePresence's exit/enter
+  // animations would run against the same state change, fighting for
+  // the same pixels and producing a 360ms-delayed pop on Chromium-
+  // based browsers. AnimatePresence wins because it works everywhere.
+  // (View Transitions remain useful for the i18n switcher in
+  // i18n-context.tsx, where there is no competing animation system.)
 
   return (
     <section id="play" className="contain-section relative w-full bg-noise py-20 sm:py-28 lg:py-32 overflow-hidden">
@@ -102,7 +89,7 @@ export function MiniGame() {
               <button
                 key={g.id}
                 type="button"
-                onClick={() => switchTab(g.id as GameId)}
+                onClick={() => setActive(g.id as GameId)}
                 data-cursor="hover"
                 data-cursor-label={isActive ? t("arcade.active") : t("arcade.load")}
                 className={cn(
