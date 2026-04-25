@@ -119,8 +119,16 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
     // completes. Stopping the source nodes before the gain ramp would cut
     // audio dead and produce an audible click — the ramp had nothing left
     // to fade.
+    //
+    // Cancel any stale events before scheduling the fade. If the user
+    // toggles off within the 1.6s window of init's fade-in ramp, both
+    // ramps would coexist on the AudioParam timeline and the gain would
+    // ramp back up to 0.5 after our teardown ramp landed at 0.
     try {
-      g.master.gain.linearRampToValueAtTime(0, g.ctx.currentTime + 0.25)
+      const t = g.ctx.currentTime
+      g.master.gain.cancelScheduledValues(t)
+      g.master.gain.setValueAtTime(g.master.gain.value, t)
+      g.master.gain.linearRampToValueAtTime(0, t + 0.25)
     } catch {}
     setTimeout(() => {
       g.bedNodes.forEach((n) => n.stop())
