@@ -53,12 +53,21 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: "VAISH",
     locale: "en_US",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "VAISH / Realm of the Untold",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "VAISH / Realm of the Untold",
     description: "A living world by Aryaman V. Gupta.",
     creator: "@paidtoolsdrive",
+    images: ["/og.png"],
   },
   robots: {
     index: true,
