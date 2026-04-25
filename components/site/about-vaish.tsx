@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { SHIMMER } from "@/lib/shimmer"
 import { useRef } from "react"
 import { motion, useScroll, useTransform, useMotionValue, useSpring, type MotionValue } from "framer-motion"
 import { useT } from "./i18n-context"
@@ -34,7 +35,7 @@ export function AboutVaish() {
     <section
       ref={ref}
       id="about-vaish"
-      className="relative overflow-hidden bg-background py-28 md:py-40"
+      className="contain-section relative overflow-hidden bg-background py-28 md:py-40"
     >
       {/* Premium ambient atmosphere :: drifting nebulae, scan ribbon, runes */}
       <SectionAtmosphere variant="dossier" runeCorner="tl" />
@@ -257,6 +258,8 @@ function VaishDiagram() {
         fill
         sizes="440px"
         className="object-cover opacity-30 [mask-image:radial-gradient(ellipse_55%_55%_at_50%_50%,black,transparent_75%)]"
+        placeholder="blur"
+        blurDataURL={SHIMMER}
       />
 
       {/* Outer rotating tick ring */}

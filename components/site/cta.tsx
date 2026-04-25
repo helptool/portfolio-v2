@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 import Image from "next/image"
+import { SHIMMER } from "@/lib/shimmer"
 import Link from "next/link"
 import { useRef, useState, useTransition, type MouseEvent } from "react"
 import { Magnetic } from "./magnetic"
@@ -24,7 +25,7 @@ export function FinalCTA() {
   const t = useT()
 
   return (
-    <section id="enter" className="relative overflow-hidden bg-background py-28 md:py-40">
+    <section id="enter" className="contain-section relative overflow-hidden bg-background py-28 md:py-40">
       <div className="pointer-events-none absolute inset-0 z-0">
         <Image
           src="/realms/hero-vista.jpg"
@@ -32,6 +33,8 @@ export function FinalCTA() {
           fill
           sizes="100vw"
           className="object-cover opacity-30 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,black,transparent_75%)]"
+          placeholder="blur"
+          blurDataURL={SHIMMER}
         />
       </div>
       <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,transparent,oklch(0.115_0.008_40)_75%)]" />
@@ -151,7 +154,7 @@ export function FinalCTA() {
               disabled={sent || isPending}
               data-cursor="enter"
               data-cursor-label={sent ? t("contact.sent") : t("contact.send")}
-              className="group relative inline-flex h-[64px] items-center gap-4 self-start rounded-full bg-primary pl-7 pr-3 text-primary-foreground transition-opacity disabled:opacity-70 overflow-hidden"
+              className="group relative inline-flex h-[64px] items-center gap-4 self-start rounded-full bg-primary pl-7 pr-3 text-primary-foreground transition-[opacity,box-shadow,filter] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] disabled:opacity-70 overflow-hidden hover:[box-shadow:0_0_0_1px_oklch(0.74_0.15_52_/_0.6),0_8px_32px_oklch(0.74_0.15_52_/_0.45),0_0_60px_oklch(0.74_0.15_52_/_0.35)] hover:[filter:saturate(1.15)]"
             >
               <span className="relative z-10 font-hud text-[11px]">
                 {sent ? t("contact.sentLong") : isPending ? "Sending…" : t("contact.sendLong")}
@@ -170,6 +173,11 @@ export function FinalCTA() {
               <span
                 aria-hidden
                 className="absolute inset-0 -translate-x-full bg-foreground/10 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0"
+              />
+              {/* Ember-glow halo :: a soft outward radial that swells on hover. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -inset-2 rounded-full bg-[radial-gradient(circle_at_center,oklch(0.74_0.15_52_/_0.55),transparent_70%)] opacity-0 blur-md transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100 -z-10"
               />
             </button>
           </Magnetic>

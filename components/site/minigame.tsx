@@ -36,7 +36,7 @@ export function MiniGame() {
   const t = useT()
 
   return (
-    <section id="play" className="relative w-full bg-noise py-20 sm:py-28 lg:py-32 overflow-hidden">
+    <section id="play" className="contain-section relative w-full bg-noise py-20 sm:py-28 lg:py-32 overflow-hidden">
       {/* Premium ambient atmosphere :: arcade haze + drifting embers */}
       <SectionAtmosphere variant="aurora" />
 
@@ -67,8 +67,12 @@ export function MiniGame() {
           <PlayerNameCard />
         </div>
 
-        {/* Tab bar :: 2 cols mobile, 3 cols tablet, 6 cols desktop */}
-        <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5 lg:grid-cols-6">
+        {/* Tab bar :: horizontal scroll-snap on mobile (each tab snaps to the
+            start of the rail so partial-tab states never linger), grid on
+            tablet+ where all six fit at once. The snap rail uses
+            overscroll-contain so flicking the tabs doesn't bubble into the
+            page scroll. */}
+        <div className="mb-6 flex snap-x snap-mandatory overflow-x-auto gap-2 -mx-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [overscroll-behavior-x:contain] sm:mx-0 sm:px-0 sm:grid sm:snap-none sm:overflow-visible sm:grid-cols-3 sm:gap-2.5 lg:grid-cols-6">
           {arcade.games.map((g) => {
             const isActive = g.id === active
             return (
@@ -79,7 +83,7 @@ export function MiniGame() {
                 data-cursor="hover"
                 data-cursor-label={isActive ? t("arcade.active") : t("arcade.load")}
                 className={cn(
-                  "group relative flex flex-col items-start gap-1 border bg-background/40 px-3 py-3 text-left transition-all duration-500",
+                  "group relative flex shrink-0 basis-[44%] snap-start flex-col items-start gap-1 border bg-background/40 px-3 py-3 text-left transition-all duration-500 sm:shrink sm:basis-auto sm:snap-align-none",
                   isActive
                     ? "border-primary/60 bg-background/70"
                     : "border-foreground/10 hover:border-foreground/25 hover:bg-background/55",

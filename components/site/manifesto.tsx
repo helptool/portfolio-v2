@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { SHIMMER } from "@/lib/shimmer"
 import Link from "next/link"
 import {
   motion,
@@ -119,6 +120,8 @@ function PortraitPlate() {
             fill
             sizes="(max-width: 1024px) 80vw, 40vw"
             className="object-cover"
+            placeholder="blur"
+            blurDataURL={SHIMMER}
             priority
           />
         </motion.div>
@@ -197,6 +200,8 @@ function SquarePlate({ src, captionKey, code }: { src: string; captionKey: strin
         fill
         sizes="(max-width: 1024px) 50vw, 24vw"
         className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
+        placeholder="blur"
+        blurDataURL={SHIMMER}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent mix-blend-multiply" />
       <div className="absolute inset-0 mix-blend-soft-light bg-gradient-to-br from-primary/12 via-transparent to-transparent" />

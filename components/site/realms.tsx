@@ -9,6 +9,7 @@ import {
   useTransform,
 } from "framer-motion"
 import Image from "next/image"
+import { SHIMMER } from "@/lib/shimmer"
 import { useMemo, useRef, useState } from "react"
 import { realms } from "@/lib/vaish"
 import { useT } from "./i18n-context"
@@ -149,7 +150,16 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
           transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
         >
-          <Image src={realm.image} alt={realm.name} fill sizes="100vw" className="object-cover" priority={index === 0} />
+          <Image
+            src={realm.image}
+            alt={realm.name}
+            fill
+            sizes="100vw"
+            className="object-cover"
+            placeholder="blur"
+            blurDataURL={SHIMMER}
+            priority={index === 0}
+          />
         </motion.div>
       </div>
 

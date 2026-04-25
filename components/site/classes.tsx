@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { SHIMMER } from "@/lib/shimmer"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { useState } from "react"
@@ -62,7 +63,7 @@ export function Classes() {
   const current = classes[active]
 
   return (
-    <section id="classes" className="relative overflow-hidden bg-background py-28 md:py-40">
+    <section id="classes" className="contain-section relative overflow-hidden bg-background py-28 md:py-40">
       {/* Premium ambient atmosphere :: drifting copper grid + nebulae */}
       <SectionAtmosphere variant="lattice" />
 
@@ -278,6 +279,8 @@ export function Classes() {
                         fill
                         sizes="(min-width: 768px) 40vw, 100vw"
                         className="object-cover"
+                        placeholder="blur"
+                        blurDataURL={SHIMMER}
                       />
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,oklch(0.09_0.006_40/0.8)_100%)]" />
                     </motion.div>
@@ -401,6 +404,8 @@ export function Classes() {
                                 fill
                                 sizes="(min-width: 640px) 18vw, 90vw"
                                 className="object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/realm:scale-110"
+                                placeholder="blur"
+                                blurDataURL={SHIMMER}
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
                               <span className="font-hud absolute left-3 top-3 text-foreground/75">

@@ -78,6 +78,63 @@
       cursor: none !important;
     }
   }
+
+  /* Ember-glow focus ring :: only visible on keyboard nav. Replaces the
+     browser default 2px outline with a layered shadow that matches the
+     copper accent. mix-blend-mode keeps it readable on any background. */
+  :focus-visible {
+    outline: none;
+  }
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible,
+  select:focus-visible, [role="button"]:focus-visible, [tabindex]:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px oklch(0.115 0.008 40),
+      0 0 0 4px oklch(0.74 0.15 52 / 0.7),
+      0 0 18px oklch(0.74 0.15 52 / 0.45);
+    border-radius: var(--radius-md);
+    transition: box-shadow 160ms var(--ease-out-expo);
+  }
+}
+
+@layer utilities {
+  /* GPU promotion for elements that animate on every scroll/raf frame.
+     Apply selectively :: overusing will-change hurts memory + battery. */
+  .gpu-layer {
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+  .gpu-layer-opacity {
+    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+
+  /* CSS containment hint :: tells the browser these sections cannot
+     affect the layout/paint of anything outside their bounding box, so
+     it can skip work when they are offscreen or unchanged. Safe to apply
+     to any block-level section that paints its own background. */
+  .contain-section {
+    contain: layout paint;
+  }
+
+  /* Image blur-up :: pairs with next/image placeholder=blur. Adds a
+     subtle saturate ramp + opacity fade-in so the swap from low-res to
+     high-res reads as a cinematic focus pull. */
+  .img-blur-up img {
+    transition:
+      filter 480ms var(--ease-out-expo),
+      opacity 360ms var(--ease-out-expo);
+  }
+  .img-blur-up img[data-loaded="false"] {
+    filter: blur(14px) saturate(0.85);
+    opacity: 0.85;
+  }
+  .img-blur-up img[data-loaded="true"] {
+    filter: blur(0) saturate(1);
+    opacity: 1;
+  }
 }
 
 @layer utilities {

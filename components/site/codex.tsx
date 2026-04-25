@@ -13,7 +13,7 @@ export function Codex() {
   const lineScale = useTransform(scrollYProgress, [0, 1], [0, 1])
 
   return (
-    <section id="codex" className="relative overflow-hidden bg-background py-28 md:py-40">
+    <section id="codex" className="contain-section relative overflow-hidden bg-background py-28 md:py-40">
       {/* Premium ambient atmosphere :: distant rune disk + drifting nebulae */}
       <SectionAtmosphere variant="dossier" runeCorner="br" />
 

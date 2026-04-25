@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { SHIMMER } from "@/lib/shimmer"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { useEffect, useState } from "react"
@@ -156,6 +157,8 @@ export function Footer() {
                   sizes="100vw"
                   priority={l.code === current.code}
                   className="object-cover object-center"
+                  placeholder="blur"
+                  blurDataURL={SHIMMER}
                 />
               </motion.div>
             )

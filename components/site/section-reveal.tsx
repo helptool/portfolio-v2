@@ -77,16 +77,20 @@ export function SectionReveal({
   const reduced = useReducedMotion()
   const isDesktop = useIsDesktop()
 
-  /* The progress curve we read everything from. We track from "section is
-     just entering the viewport" to "section is comfortably above the fold". */
+  /* The progress curve we read everything from. Window tightened from
+     ["start 95%", "start 35%"] -> ["start 92%", "start 45%"] so reveals
+     complete before the section is fully on screen instead of mid-screen.
+     Reads as "section is already settled by the time you reach it" rather
+     than "section is still animating while I'm trying to read it".
+     Spring stiffness bumped 130 -> 180 so motion lands a hair faster. */
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start 95%", "start 35%"],
+    offset: ["start 92%", "start 45%"],
   })
   const eased = useSpring(scrollYProgress, {
-    stiffness: 130,
-    damping: 30,
-    mass: 0.55,
+    stiffness: 180,
+    damping: 32,
+    mass: 0.5,
   })
 
   /* Mobile gets gentler distances. Desktop reads more theatrical. */
