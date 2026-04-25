@@ -1,5 +1,6 @@
 import "server-only"
 import { createHmac, randomBytes } from "crypto"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 
 /**
  * Per-game score rules. Used to reject obviously fabricated submissions.
@@ -18,16 +19,10 @@ export const GAME_RULES = {
 
 export type GameId = keyof typeof GAME_RULES
 
-type Session = {
-  id: string
-  game: GameId
-  startedAt: number
-  submitted: boolean
-  // A salt bound into the HMAC. Rotated per-session.
-  salt: string
-}
+const GAME_IDS = Object.keys(GAME_RULES) as GameId[]
+const GAME_ID_SET = new Set<string>(GAME_IDS)
 
-type ScoreRow = {
+export type ScoreRow = {
   id: string
   game: GameId
   name: string
@@ -36,54 +31,61 @@ type ScoreRow = {
   createdAt: number
 }
 
-// Singleton stores. Attached to globalThis so hot-reload in dev keeps them.
-declare global {
-  // eslint-disable-next-line no-var
-  var __vaish_arcade__: {
-    sessions: Map<string, Session>
-    leaderboard: Map<GameId, ScoreRow[]>
-    secret: string
-  } | undefined
-}
+const SESSION_TTL_MS = 30 * 60 * 1000
+const TOP_LIMIT = 20
 
-function store() {
-  if (!globalThis.__vaish_arcade__) {
-    globalThis.__vaish_arcade__ = {
-      sessions: new Map(),
-      leaderboard: new Map(),
-      secret: process.env.ARCADE_SECRET || randomBytes(32).toString("hex"),
+// HMAC secret must be stable across Worker isolates so a session opened on
+// isolate A can be verified on isolate B. Set ARCADE_SECRET as a Worker
+// secret in production. Local dev falls back to an ephemeral random hex —
+// fine for `npm run dev`, useless for cross-request stability.
+let cachedSecret: string | null = null
+function getSecret(): string {
+  if (cachedSecret) return cachedSecret
+  const env = process.env.ARCADE_SECRET
+  if (env && env.length >= 32) {
+    cachedSecret = env
+  } else {
+    if (process.env.NODE_ENV === "production") {
+      console.warn(
+        "[arcade] ARCADE_SECRET is not set in production. Sessions will not survive isolate recycles."
+      )
     }
+    cachedSecret = randomBytes(32).toString("hex")
   }
-  return globalThis.__vaish_arcade__
+  return cachedSecret
 }
 
 function sign(payload: string) {
-  const s = store()
-  return createHmac("sha256", s.secret).update(payload).digest("hex")
+  return createHmac("sha256", getSecret()).update(payload).digest("hex")
 }
 
-function cleanupOldSessions() {
-  const s = store()
-  const now = Date.now()
-  for (const [id, sess] of s.sessions) {
-    if (sess.submitted || now - sess.startedAt > 30 * 60 * 1000) s.sessions.delete(id)
+// Minimal local typing for the D1 binding so we don't take a hard dependency
+// on @cloudflare/workers-types. Mirrors the shape used here only.
+type D1RunResult = { meta?: { changes?: number } }
+type D1Stmt = {
+  bind: (...values: unknown[]) => D1Stmt
+  first: <T = unknown>() => Promise<T | null>
+  all: <T = unknown>() => Promise<{ results?: T[] }>
+  run: () => Promise<D1RunResult>
+}
+type D1 = {
+  prepare: (sql: string) => D1Stmt
+  batch: (stmts: D1Stmt[]) => Promise<D1RunResult[]>
+}
+
+function db(): D1 {
+  const env = getCloudflareContext().env as unknown as { DB?: D1 }
+  if (!env.DB) {
+    throw new Error(
+      "[arcade] D1 binding 'DB' is not configured. Add it to wrangler.jsonc and apply db/schema.sql."
+    )
   }
-}
-
-export function openSession(game: GameId) {
-  cleanupOldSessions()
-  const s = store()
-  const id = randomBytes(12).toString("hex")
-  const salt = randomBytes(8).toString("hex")
-  const startedAt = Date.now()
-  s.sessions.set(id, { id, game, startedAt, submitted: false, salt })
-  const token = sign(`${id}|${game}|${startedAt}|${salt}`)
-  return { sessionId: id, token, startedAt, game }
+  return env.DB
 }
 
 function sanitizeName(input: string) {
   const trimmed = (input || "").trim().slice(0, 20)
-  // Keep letters, digits, spaces, hyphens, underscores and a few safe unicode marks
+  // Keep letters, digits, spaces, hyphens, underscores and a few safe unicode marks.
   const safe = trimmed.replace(/[^\p{L}\p{N}\p{M} _.\-]/gu, "")
   return safe || "Wanderer"
 }
@@ -102,11 +104,63 @@ function sanitizeStats(stats: Record<string, unknown> | undefined) {
   return out
 }
 
+function rowToScore(row: {
+  id: string
+  game: string
+  name: string
+  score: number
+  stats: string
+  created_at: number
+}): ScoreRow {
+  let stats: Record<string, string | number> = {}
+  try {
+    const parsed = JSON.parse(row.stats)
+    if (parsed && typeof parsed === "object") stats = parsed
+  } catch {
+    /* ignore corrupt stats */
+  }
+  return {
+    id: row.id,
+    game: row.game as GameId,
+    name: row.name,
+    score: row.score,
+    stats,
+    createdAt: row.created_at,
+  }
+}
+
+export async function openSession(game: GameId): Promise<{
+  sessionId: string
+  token: string
+  startedAt: number
+  game: GameId
+}> {
+  if (!GAME_ID_SET.has(game)) throw new Error("Unknown game.")
+  const id = randomBytes(12).toString("hex")
+  const salt = randomBytes(8).toString("hex")
+  const startedAt = Date.now()
+  const cutoff = startedAt - SESSION_TTL_MS
+
+  const d = db()
+  // Insert + opportunistic cleanup of expired/submitted rows.
+  await d.batch([
+    d.prepare("DELETE FROM arcade_sessions WHERE submitted = 1 OR started_at < ?1").bind(cutoff),
+    d
+      .prepare(
+        "INSERT INTO arcade_sessions (id, game, started_at, submitted, salt) VALUES (?1, ?2, ?3, 0, ?4)"
+      )
+      .bind(id, game, startedAt, salt),
+  ])
+
+  const token = sign(`${id}|${game}|${startedAt}|${salt}`)
+  return { sessionId: id, token, startedAt, game }
+}
+
 export type SubmissionResult =
   | { ok: true; rank: number | null; top: ScoreRow[] }
   | { ok: false; reason: string }
 
-export function submit(opts: {
+export async function submit(opts: {
   sessionId: string
   token: string
   game: GameId
@@ -114,19 +168,30 @@ export function submit(opts: {
   name: string
   durationMs?: number
   stats?: Record<string, unknown>
-}): SubmissionResult {
-  const s = store()
-  const sess = s.sessions.get(opts.sessionId)
+}): Promise<SubmissionResult> {
+  if (!GAME_ID_SET.has(opts.game)) return { ok: false, reason: "Unknown game." }
+  const d = db()
+
+  const sess = await d
+    .prepare(
+      "SELECT id, game, started_at, submitted, salt FROM arcade_sessions WHERE id = ?1 LIMIT 1"
+    )
+    .bind(opts.sessionId)
+    .first<{ id: string; game: string; started_at: number; submitted: number; salt: string }>()
+
   if (!sess) return { ok: false, reason: "Session missing or expired." }
-  if (sess.submitted) return { ok: false, reason: "Session already submitted." }
+  if (sess.submitted === 1) return { ok: false, reason: "Session already submitted." }
   if (sess.game !== opts.game) return { ok: false, reason: "Session / game mismatch." }
 
-  const expectedToken = sign(`${sess.id}|${sess.game}|${sess.startedAt}|${sess.salt}`)
+  const expectedToken = sign(`${sess.id}|${sess.game}|${sess.started_at}|${sess.salt}`)
   if (expectedToken !== opts.token) return { ok: false, reason: "Token invalid." }
 
-  const rules = GAME_RULES[sess.game]
+  const rules = GAME_RULES[sess.game as GameId]
   const now = Date.now()
-  const durationMs = Math.max(0, Math.min(opts.durationMs ?? now - sess.startedAt, now - sess.startedAt + 2000))
+  const durationMs = Math.max(
+    0,
+    Math.min(opts.durationMs ?? now - sess.started_at, now - sess.started_at + 2000)
+  )
   if (durationMs < rules.minDurationMs) return { ok: false, reason: "Duration too short." }
   if (durationMs > rules.maxDurationMs) return { ok: false, reason: "Duration out of range." }
 
@@ -139,35 +204,71 @@ export function submit(opts: {
   if (opts.score > maxExpected * 1.25) return { ok: false, reason: "Score rate not plausible." }
 
   const name = sanitizeName(opts.name)
+  const stats = sanitizeStats(opts.stats)
   const row: ScoreRow = {
     id: randomBytes(6).toString("hex"),
-    game: sess.game,
+    game: sess.game as GameId,
     name,
     score: Math.floor(opts.score),
-    stats: sanitizeStats(opts.stats),
+    stats,
     createdAt: now,
   }
 
-  sess.submitted = true
-
-  const existing = s.leaderboard.get(sess.game) ?? []
-  existing.push(row)
-  existing.sort((a, b) => b.score - a.score || a.createdAt - b.createdAt)
-  const trimmed = existing.slice(0, 20)
-  s.leaderboard.set(sess.game, trimmed)
-
-  const rank = trimmed.findIndex((r) => r.id === row.id)
-  return { ok: true, rank: rank >= 0 ? rank + 1 : null, top: trimmed }
-}
-
-export function getTop(game: GameId): ScoreRow[] {
-  return store().leaderboard.get(game) ?? []
-}
-
-export function getAllTop(): Record<GameId, ScoreRow[]> {
-  const out = {} as Record<GameId, ScoreRow[]>
-  for (const g of Object.keys(GAME_RULES) as GameId[]) {
-    out[g] = getTop(g)
+  // Atomic claim + insert in a single D1 transaction. Both statements are
+  // gated on submitted=0, so:
+  //   - If the session is unclaimed, both INSERT and UPDATE write a row each.
+  //     batch() commits them together.
+  //   - If a concurrent request already claimed it, neither writes (changes=0
+  //     on both) and we bail out cleanly.
+  //   - If any statement throws (D1 transient error etc), batch() rolls the
+  //     whole transaction back. The session is NOT burned, so the user can
+  //     retry without losing their score.
+  const results = await d.batch([
+    d
+      .prepare(
+        "INSERT INTO arcade_scores (id, game, name, score, stats, created_at) " +
+          "SELECT ?1, ?2, ?3, ?4, ?5, ?6 " +
+          "WHERE EXISTS (SELECT 1 FROM arcade_sessions WHERE id = ?7 AND submitted = 0)"
+      )
+      .bind(row.id, row.game, row.name, row.score, JSON.stringify(stats), row.createdAt, sess.id),
+    d
+      .prepare("UPDATE arcade_sessions SET submitted = 1 WHERE id = ?1 AND submitted = 0")
+      .bind(sess.id),
+  ])
+  if ((results[0]?.meta?.changes ?? 0) === 0) {
+    return { ok: false, reason: "Session already submitted." }
   }
+
+  const top = await getTop(row.game)
+  const rank = top.findIndex((r) => r.id === row.id)
+  return { ok: true, rank: rank >= 0 ? rank + 1 : null, top }
+}
+
+export async function getTop(game: GameId): Promise<ScoreRow[]> {
+  if (!GAME_ID_SET.has(game)) return []
+  const d = db()
+  const res = await d
+    .prepare(
+      "SELECT id, game, name, score, stats, created_at FROM arcade_scores WHERE game = ?1 ORDER BY score DESC, created_at ASC LIMIT ?2"
+    )
+    .bind(game, TOP_LIMIT)
+    .all<{
+      id: string
+      game: string
+      name: string
+      score: number
+      stats: string
+      created_at: number
+    }>()
+  return (res.results ?? []).map(rowToScore)
+}
+
+export async function getAllTop(): Promise<Record<GameId, ScoreRow[]>> {
+  const out = {} as Record<GameId, ScoreRow[]>
+  // Fan out in parallel — D1 over local socket is cheap, and there are only 6 games.
+  const results = await Promise.all(GAME_IDS.map((g) => getTop(g)))
+  GAME_IDS.forEach((g, i) => {
+    out[g] = results[i]
+  })
   return out
 }

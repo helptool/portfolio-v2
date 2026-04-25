@@ -17,6 +17,13 @@
       "service": "portfolio-v2"
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "portfolio-arcade",
+      "database_id": "d6f25359-4c88-4b77-88fb-47eeaf90a99e"
+    }
+  ],
   "images": {
     "binding": "IMAGES"
   },
