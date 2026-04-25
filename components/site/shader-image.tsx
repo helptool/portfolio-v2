@@ -26,6 +26,7 @@ import Image, { type ImageProps } from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useReducedMotion } from "framer-motion"
 import { SHIMMER } from "@/lib/shimmer"
+import { cn } from "@/lib/utils"
 
 type Props = Omit<ImageProps, "placeholder" | "blurDataURL" | "onLoad"> & {
   /** Strength of the displacement at rest (0..1). Default 0.04. */
@@ -291,7 +292,17 @@ export function ShaderImage({
   }, [reduced, imgLoaded, baseWarp, hoverWarp, chromaticAberration])
 
   return (
-    <div ref={containerRef} className={className} style={{ position: "relative", overflow: "hidden" }}>
+    <div
+      ref={containerRef}
+      /* `relative` is the default positioning context for the inner canvas;
+         caller can override with `absolute inset-0` etc. via className —
+         Tailwind's `relative` will be cancelled by the later utility. We
+         don't put position in inline style because that would beat the
+         caller's class. `overflow-hidden` stays inline because it's never
+         overridden in practice. */
+      className={cn("relative", className)}
+      style={{ overflow: "hidden" }}
+    >
       {/* Hidden source image — stays in DOM for SEO/crawlers and as the
           WebGL texture source. We let next/image handle responsive sizing,
           formats, and the LQIP swap-up via the shimmer placeholder. */}

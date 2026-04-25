@@ -1,7 +1,7 @@
 "use client"
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 /* ---------------------------------------------------------------------------
  * IntroLoader :: cinematic entry sequence.
@@ -94,8 +94,16 @@ export function IntroLoader() {
     return () => clearTimeout(id)
   }, [reentry])
 
-  /* Main progress animation. Capped at 99 until readiness signal lands so
-     the bar never claims completion before the page actually is. */
+  /* Main progress animation. Capped at 99 until BOTH the eased curve
+     reaches 1.0 (minimum 1600ms elapsed) AND the readiness signal is
+     true. We read `ready` through a ref so the effect doesn't tear
+     down + restart when readiness flips — that would reset `start` and
+     cause an instant jump-to-100 on fast cached loads. */
+  const readyRef = useRef(ready)
+  useEffect(() => {
+    readyRef.current = ready
+  }, [ready])
+
   useEffect(() => {
     if (reduced || reentry) return
     let raf = 0
@@ -105,14 +113,16 @@ export function IntroLoader() {
       const elapsed = t - start
       const p = Math.min(1, elapsed / minDur)
       const eased = 1 - Math.pow(1 - p, 3)
-      const target = ready ? 1 : Math.min(0.99, eased)
+      // Hold at 99 until the page is ACTUALLY ready AND minimum time has
+      // elapsed. Either condition unsatisfied keeps us below 1.0.
+      const target = readyRef.current && p >= 1 ? 1 : Math.min(0.99, eased)
       setProgress(Math.round(target * 100))
       if (target < 1) raf = requestAnimationFrame(tick)
       else setTimeout(() => setDone(true), 260)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [reduced, reentry, ready])
+  }, [reduced, reentry])
 
   /* Lock body scroll while the curtain is up. */
   useEffect(() => {

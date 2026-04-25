@@ -85,10 +85,13 @@ export function RevealImage({
         } as React.CSSProperties
       }
     >
-      {/* Base layer :: the current image */}
+      {/* Base layer :: the current image. className is destructured out
+          of imageProps so we have to forward it explicitly here, otherwise
+          callers' `object-cover` (etc.) is dropped on the base layer. */}
       <Image
         {...imageProps}
         alt={alt}
+        className={className}
         placeholder="blur"
         blurDataURL={SHIMMER}
       />
