@@ -89,27 +89,49 @@ export function LetterTilt({
     return <span className={className}>{children}</span>
   }
 
-  // Split into characters; preserve spaces.
-  const chars = Array.from(children)
+  // Split into words first, then characters within each word. This is the
+  // only way to keep per-letter inline-block transforms (needed for tilt)
+  // while still allowing the browser to break lines at word boundaries.
+  // Adjacent JSX elements have no whitespace text between them; a real
+  // space text node ` ` between word groups is the wrap opportunity.
+  // Also splitting on \s+ via regex preserves multiple consecutive
+  // whitespace as a single break.
+  const words = children.split(/(\s+)/)
 
   return (
     <span ref={ref} className={className} aria-label={children}>
-      {chars.map((ch, i) => (
-        <span
-          key={i}
-          data-tilt-char
-          aria-hidden
-          style={{
-            display: "inline-block",
-            transform: "rotate(var(--tilt, 0deg))",
-            transformOrigin: "50% 80%",
-            transition: "transform 320ms cubic-bezier(0.16, 1, 0.3, 1)",
-            willChange: "transform",
-          }}
-        >
-          {ch === " " ? "\u00A0" : ch}
-        </span>
-      ))}
+      {words.map((word, wi) => {
+        // Whitespace runs render as plain text so the browser can break
+        // there. Anything else becomes a non-breaking inline-block group
+        // of tilt-able characters.
+        if (/^\s+$/.test(word)) {
+          return <span key={`s-${wi}`}>{word}</span>
+        }
+        const chars = Array.from(word)
+        return (
+          <span
+            key={`w-${wi}`}
+            aria-hidden
+            style={{ display: "inline-block", whiteSpace: "nowrap" }}
+          >
+            {chars.map((ch, ci) => (
+              <span
+                key={ci}
+                data-tilt-char
+                style={{
+                  display: "inline-block",
+                  transform: "rotate(var(--tilt, 0deg))",
+                  transformOrigin: "50% 80%",
+                  transition: "transform 320ms cubic-bezier(0.16, 1, 0.3, 1)",
+                  willChange: "transform",
+                }}
+              >
+                {ch}
+              </span>
+            ))}
+          </span>
+        )
+      })}
     </span>
   )
 }

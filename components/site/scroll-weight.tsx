@@ -27,6 +27,14 @@ type Props = {
   threshold?: number
   /** HTML tag. Default span. */
   as?: "span" | "h1" | "h2" | "div" | "p"
+  /**
+   * Extra variation axes to preserve alongside `wght`. CSS
+   * `font-variation-settings` is replace-not-merge, so any axes set on
+   * the parent (e.g. `font-wordmark-tight`'s `"opsz" 96`) are clobbered
+   * unless we re-declare them here. Default keeps Bodoni Moda's optical
+   * size axis pegged at 96 to match the existing wordmark utilities.
+   */
+  extraAxes?: string
 }
 
 export function ScrollWeight({
@@ -36,6 +44,7 @@ export function ScrollWeight({
   max = 900,
   threshold = 80,
   as = "span",
+  extraAxes = '"opsz" 96',
 }: Props) {
   const reduced = useReducedMotion()
   const weight = useMotionValue(min)
@@ -43,7 +52,9 @@ export function ScrollWeight({
   // Variable-font axis. `wght` reads continuous values in Bodoni Moda's
   // 400..900 supported range. Using fontVariationSettings is more robust
   // than fontWeight (which some browsers round to nearest 100).
-  const variation = useMotionTemplate`"wght" ${smoothed}`
+  // We also re-emit any extraAxes (default `"opsz" 96`) since
+  // font-variation-settings replaces the entire inherited value.
+  const variation = useMotionTemplate`"wght" ${smoothed}, ${extraAxes}`
 
   useEffect(() => {
     if (reduced) return
