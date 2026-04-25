@@ -135,6 +135,7 @@ export async function openSession(game: GameId): Promise<{
   startedAt: number
   game: GameId
 }> {
+  if (!GAME_ID_SET.has(game)) throw new Error("Unknown game.")
   const id = randomBytes(12).toString("hex")
   const salt = randomBytes(8).toString("hex")
   const startedAt = Date.now()
