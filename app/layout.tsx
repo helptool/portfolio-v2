@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next"
 import { Inter, Instrument_Serif, JetBrains_Mono, Bodoni_Moda } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { ArcadeProvider } from "@/components/site/arcade/arcade-context"
 import { I18nProvider } from "@/components/site/i18n-context"
+import { CloudflareAnalytics } from "@/components/site/cf-analytics"
 
 const SITE_URL = "https://portfolio-v2.paidtoolsdrive.workers.dev"
 
@@ -120,7 +120,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <I18nProvider>
           <ArcadeProvider>{children}</ArcadeProvider>
         </I18nProvider>
-        {process.env.NODE_ENV === "production" && <Analytics />}
+        <CloudflareAnalytics />
       </body>
     </html>
   )

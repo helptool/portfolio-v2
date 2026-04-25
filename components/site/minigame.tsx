@@ -1,20 +1,33 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { AnimatePresence, motion } from "framer-motion"
 import { arcade } from "@/lib/vaish"
-import { RuneChaseGame } from "./games/rune-chase"
-import { GlyphReflexGame } from "./games/glyph-reflex"
-import { MemoryPulseGame } from "./games/memory-pulse"
-import { RuneMatchGame } from "./games/rune-match"
-import { SigilTraceGame } from "./games/sigil-trace"
-import { SigilForgeGame } from "./games/sigil-forge"
 import { useT } from "./i18n-context"
 import { LeaderboardPanel } from "./arcade/leaderboard"
 import { PlayerNameCard } from "./arcade/player-name-card"
 import { useArcade, type GameId } from "./arcade/arcade-context"
 import { cn } from "@/lib/utils"
 import { SectionAtmosphere } from "./section-atmosphere"
+
+// Each game is ~300-450 LOC of canvas/Framer logic. Lazy-load so the home page
+// only ships the active tab's bundle (and only if the user actually scrolls
+// into the arcade and picks a game).
+const GameLoading = () => (
+  <div className="flex h-full w-full items-center justify-center font-hud text-foreground/40 text-[11px]">
+    Loading game…
+  </div>
+)
+const dynamicGame = (loader: () => Promise<{ default: React.ComponentType }>) =>
+  dynamic(loader, { ssr: false, loading: GameLoading })
+
+const RuneChaseGame = dynamicGame(() => import("./games/rune-chase").then((m) => ({ default: m.RuneChaseGame })))
+const GlyphReflexGame = dynamicGame(() => import("./games/glyph-reflex").then((m) => ({ default: m.GlyphReflexGame })))
+const MemoryPulseGame = dynamicGame(() => import("./games/memory-pulse").then((m) => ({ default: m.MemoryPulseGame })))
+const RuneMatchGame = dynamicGame(() => import("./games/rune-match").then((m) => ({ default: m.RuneMatchGame })))
+const SigilTraceGame = dynamicGame(() => import("./games/sigil-trace").then((m) => ({ default: m.SigilTraceGame })))
+const SigilForgeGame = dynamicGame(() => import("./games/sigil-forge").then((m) => ({ default: m.SigilForgeGame })))
 
 export function MiniGame() {
   const [active, setActive] = useState<GameId>("rune-chase")

@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic"
 import { Nav } from "@/components/site/nav"
 import { Hero } from "@/components/site/hero"
 import { AboutVaish } from "@/components/site/about-vaish"
@@ -5,7 +6,6 @@ import { Manifesto } from "@/components/site/manifesto"
 import { Realms } from "@/components/site/realms"
 import { Classes } from "@/components/site/classes"
 import { Codex } from "@/components/site/codex"
-import { MiniGame } from "@/components/site/minigame"
 import { Artifacts } from "@/components/site/artifacts"
 import { Ticker } from "@/components/site/ticker"
 import { FinalCTA } from "@/components/site/cta"
@@ -16,6 +16,12 @@ import { RuneDivider } from "@/components/site/rune-divider"
 import { SectionReveal } from "@/components/site/section-reveal"
 import { IntroLoader } from "@/components/site/loader"
 import { SmoothScroll } from "@/components/site/smooth-scroll"
+
+// MiniGame ships ~2300 LOC of canvas/Framer game logic. Code-split so the
+// chunk only loads when the visitor scrolls past the codex into the arcade.
+const MiniGame = dynamic(() => import("@/components/site/minigame").then((m) => ({ default: m.MiniGame })), {
+  loading: () => <div className="min-h-[600px]" aria-hidden />,
+})
 
 /**
  * Page composition
