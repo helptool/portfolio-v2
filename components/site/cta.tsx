@@ -149,37 +149,45 @@ export function FinalCTA() {
             ) : null}
           </div>
           <Magnetic strength={0.35}>
-            <button
-              type="submit"
-              disabled={sent || isPending}
-              data-cursor="enter"
-              data-cursor-label={sent ? t("contact.sent") : t("contact.send")}
-              className="group relative inline-flex h-[64px] items-center gap-4 self-start rounded-full bg-primary pl-7 pr-3 text-primary-foreground transition-[opacity,box-shadow,filter] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] disabled:opacity-70 overflow-hidden hover:[box-shadow:0_0_0_1px_oklch(0.74_0.15_52_/_0.6),0_8px_32px_oklch(0.74_0.15_52_/_0.45),0_0_60px_oklch(0.74_0.15_52_/_0.35)] hover:[filter:saturate(1.15)]"
-            >
-              <span className="relative z-10 font-hud text-[11px]">
-                {sent ? t("contact.sentLong") : isPending ? "Sending…" : t("contact.sendLong")}
-              </span>
-              <span className="relative z-10 flex h-[46px] w-[46px] items-center justify-center rounded-full bg-primary-foreground/15">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  {sent ? <path d="M5 12l5 5 10-12" /> : <path d="M5 12h14M13 6l6 6-6 6" />}
-                </svg>
-              </span>
+            {/* Outer wrapper hosts the ember-glow halo as a sibling of the
+                button. The button itself uses overflow-hidden for the inner
+                sweep, so the halo HAS to live outside it; using a named
+                group/cta lets us drive halo opacity from the wrapper hover
+                while the button keeps its own unnamed `group` for its
+                child sweep + arrow nudge. */}
+            <div className="group/cta relative inline-flex">
+              {/* Ember-glow halo :: a soft outward radial behind the pill. */}
               <span
                 aria-hidden
-                className="absolute inset-0 -translate-x-full bg-foreground/10 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0"
+                className="pointer-events-none absolute -inset-3 rounded-full bg-[radial-gradient(circle_at_center,oklch(0.74_0.15_52_/_0.55),transparent_70%)] opacity-0 blur-xl transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/cta:opacity-100"
               />
-              {/* Ember-glow halo :: a soft outward radial that swells on hover. */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute -inset-2 rounded-full bg-[radial-gradient(circle_at_center,oklch(0.74_0.15_52_/_0.55),transparent_70%)] opacity-0 blur-md transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100 -z-10"
-              />
-            </button>
+              <button
+                type="submit"
+                disabled={sent || isPending}
+                data-cursor="enter"
+                data-cursor-label={sent ? t("contact.sent") : t("contact.send")}
+                className="group relative inline-flex h-[64px] items-center gap-4 self-start rounded-full bg-primary pl-7 pr-3 text-primary-foreground transition-[opacity,box-shadow,filter] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] disabled:opacity-70 overflow-hidden hover:[box-shadow:0_0_0_1px_oklch(0.74_0.15_52_/_0.6),0_8px_32px_oklch(0.74_0.15_52_/_0.45),0_0_60px_oklch(0.74_0.15_52_/_0.35)] hover:[filter:saturate(1.15)]"
+              >
+                <span className="relative z-10 font-hud text-[11px]">
+                  {sent ? t("contact.sentLong") : isPending ? "Sending…" : t("contact.sendLong")}
+                </span>
+                <span className="relative z-10 flex h-[46px] w-[46px] items-center justify-center rounded-full bg-primary-foreground/15">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    {sent ? <path d="M5 12l5 5 10-12" /> : <path d="M5 12h14M13 6l6 6-6 6" />}
+                  </svg>
+                </span>
+                <span
+                  aria-hidden
+                  className="absolute inset-0 -translate-x-full bg-foreground/10 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0"
+                />
+              </button>
+            </div>
           </Magnetic>
         </motion.form>
 
