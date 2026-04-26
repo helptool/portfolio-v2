@@ -193,6 +193,28 @@ export function DividerFluid({ className, intensity = 1 }: Props) {
     const ro = new ResizeObserver(setSize)
     ro.observe(canvas)
 
+    /* Reduced-motion path :: render a single static frame and bail out
+       before any animation infrastructure (IO + mouse listeners + tick)
+       gets attached. Doing this earlier than the rAF setup is critical:
+       if we registered the IntersectionObserver first and only then
+       checked `reduced`, the observer's callback would later start the
+       loop on intersection, violating the user preference. */
+    if (reduced) {
+      gl.uniform1f(uTime, 0)
+      gl.uniform1f(uIntensity, 0.6)
+      gl.uniform2f(uMouse, -1, -1)
+      gl.clearColor(0, 0, 0, 0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
+      return () => {
+        ro.disconnect()
+        gl.deleteBuffer(buf)
+        gl.deleteProgram(program)
+        gl.deleteShader(vs)
+        gl.deleteShader(fs)
+      }
+    }
+
     /* Mouse tracking :: throttled via rAF, normalised to 0..1 over the
        canvas bounds. Set u_mouse to (-1,-1) when the cursor leaves. */
     let mouseX = -1
@@ -267,16 +289,6 @@ export function DividerFluid({ className, intensity = 1 }: Props) {
       gl.drawArrays(gl.TRIANGLES, 0, 6)
 
       raf = requestAnimationFrame(tick)
-    }
-
-    if (reduced) {
-      // Render a single static frame and stop — respects the user pref.
-      gl.uniform1f(uTime, 0)
-      gl.uniform1f(uIntensity, 0.6)
-      gl.uniform2f(uMouse, -1, -1)
-      gl.clearColor(0, 0, 0, 0)
-      gl.clear(gl.COLOR_BUFFER_BIT)
-      gl.drawArrays(gl.TRIANGLES, 0, 6)
     }
 
     return () => {
