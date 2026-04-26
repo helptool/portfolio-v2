@@ -88,7 +88,15 @@ export function RevealImage({
       data-cursor={desktopEnabled ? "view" : undefined}
       data-cursor-label={desktopEnabled ? revealLabel || "Untold" : undefined}
       onPointerEnter={desktopEnabled ? () => setActive(true) : undefined}
-      onPointerLeave={desktopEnabled ? () => setActive(false) : undefined}
+      /* `onPointerLeave` is wired for both paths. On desktop it closes
+         the porthole when the cursor leaves the element. On touch it
+         closes the porthole when the finger drags off the element —
+         without this, dragging horizontally across realm slides leaves
+         the porthole stuck visible because `pointerup` never fires
+         inside the element. (We deliberately don't use
+         `setPointerCapture` because that would prevent the parent
+         carousel from receiving the swipe gesture.) */
+      onPointerLeave={enabled ? () => setActive(false) : undefined}
       onPointerMove={desktopEnabled ? updatePosition : undefined}
       onPointerDown={
         touchEnabled
