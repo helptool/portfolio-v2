@@ -226,8 +226,15 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
         </motion.div>
       </div>
 
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,oklch(0.09_0.006_40/0.5)_0%,transparent_25%,transparent_55%,oklch(0.09_0.006_40/0.94)_100%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,oklch(0.09_0.006_40/0.88)_0%,transparent_50%,transparent_100%)] md:bg-[linear-gradient(90deg,oklch(0.09_0.006_40/0.82)_0%,transparent_40%,transparent_100%)]" />
+      {/* Decorative tone gradients sit on top of the RevealImage. They
+          must opt out of pointer events so onPointerMove / Enter /
+          Leave can reach the RevealImage container — that is what
+          drives the cursor-porthole "Untold" reveal. Without
+          pointer-events-none the overlays absorb every move event
+          before it can hit the RevealImage's listeners and the
+          porthole never opens. */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,oklch(0.09_0.006_40/0.5)_0%,transparent_25%,transparent_55%,oklch(0.09_0.006_40/0.94)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,oklch(0.09_0.006_40/0.88)_0%,transparent_50%,transparent_100%)] md:bg-[linear-gradient(90deg,oklch(0.09_0.006_40/0.82)_0%,transparent_40%,transparent_100%)]" />
 
       {/* ghost index */}
       <div aria-hidden className="pointer-events-none absolute bottom-[-4vw] right-[-1vw] z-[5] text-right">
