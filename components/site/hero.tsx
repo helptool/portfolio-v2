@@ -898,11 +898,6 @@ export function Hero() {
           style={{
             letterSpacing: "-0.035em",
             fontFeatureSettings: "'kern' 1, 'liga' 1",
-            // 3D context for the per-letter rotateX flip during morph.
-            // Set on the H1 so individual glyphs share the same vanishing
-            // point — otherwise each glyph computes its own perspective
-            // and the flip looks staggered along the z-axis.
-            perspective: 800,
             // Per-locale font swap :: Bodoni for Latin, Noto Serif JP for
             // katakana, Noto Serif Devanagari for हिन्दी. The fallback
             // chain keeps the engraved/serif feel before the woff2 chunk
@@ -910,7 +905,7 @@ export function Hero() {
             fontFamily: meta.wordmarkFont,
           }}
         >
-          <span className="flex items-baseline" style={{ transformStyle: "preserve-3d" }}>
+          <span className="flex items-baseline">
             {meta.wordmark.map((l, i) => {
               const isLeft = i < 2
               const isMid = i === 2
@@ -939,11 +934,20 @@ export function Hero() {
                       (left/mid/right) which is independent of locale.
                       The inner AnimatePresence cross-fades the actual
                       glyph when `lang` changes — flip + blur reads as
-                      a morph without dishonest path interpolation. */}
+                      a morph without dishonest path interpolation.
+                      `perspective` sits here (rather than on the H1)
+                      because the per-letter `overflow-hidden` parent is
+                      a CSS grouping boundary that doesn't propagate
+                      `preserve-3d` from the H1 down to the rotateX. A
+                      per-letter perspective gives each glyph its own
+                      vanishing point, which at this glyph size is
+                      visually indistinguishable from a shared one. */}
                   <motion.span
                     style={{
                       x: isLeft ? splitLeft : isRight ? splitRight : 0,
                       scale: isMid ? splitMidScale : 1,
+                      perspective: 800,
+                      transformStyle: "preserve-3d",
                     }}
                     initial={{ y: "115%", rotateZ: 6 }}
                     animate={{ y: "0%", rotateZ: 0 }}
