@@ -32,7 +32,7 @@ export function LeaderboardPanel({ game, gameName }: { game: GameId; gameName: s
       <span aria-hidden className="pointer-events-none absolute top-0 left-0 h-3 w-3 border-t border-l border-primary/60" />
       <span aria-hidden className="pointer-events-none absolute bottom-0 right-0 h-3 w-3 border-b border-r border-primary/60" />
       <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3">
-        <div className="font-hud text-foreground/55">Leaderboard // Top 10</div>
+        <div className="font-hud text-foreground/70">Leaderboard // Top 10</div>
         <div className="font-hud text-foreground/75">{gameName}</div>
       </div>
 
@@ -69,7 +69,7 @@ function LeaderRow({ row, rank, isMine }: { row: ScoreRow; rank: number; isMine:
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="flex items-center gap-3 px-3 py-2.5"
     >
-      <span className="font-hud w-6 text-foreground/55 tabular-nums">
+      <span className="font-hud w-6 text-foreground/70 tabular-nums">
         {String(rank).padStart(2, "0")}
       </span>
       <span className="flex-1 truncate font-wordmark-tight text-[15px] text-foreground">
@@ -101,7 +101,7 @@ export function PlayerTag() {
       <span aria-hidden className="pointer-events-none absolute top-0 left-0 h-3 w-3 border-t border-l border-primary/60" />
       <span aria-hidden className="pointer-events-none absolute bottom-0 right-0 h-3 w-3 border-b border-r border-primary/60" />
       <div className="min-w-0 flex-1">
-        <div className="font-hud text-foreground/55">Player Tag</div>
+        <div className="font-hud text-foreground/70">Player Tag</div>
         {editing ? (
           <input
             autoFocus

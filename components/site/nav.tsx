@@ -132,7 +132,7 @@ export function Nav() {
               {/* Outer dotted ring, slow rotation */}
               <motion.svg
                 viewBox="0 0 100 100"
-                className="absolute inset-0 text-foreground/55 transition-colors duration-500 group-hover:text-primary"
+                className="absolute inset-0 text-foreground/70 transition-colors duration-500 group-hover:text-primary"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
               >
@@ -330,7 +330,7 @@ export function Nav() {
                         "font-hud relative z-10 transition-colors duration-300",
                         isActive
                           ? "text-foreground"
-                          : "text-foreground/55 group-hover:text-foreground/90",
+                          : "text-foreground/70 group-hover:text-foreground/90",
                       )}
                     >
                       {labelText}
@@ -382,7 +382,7 @@ export function Nav() {
 
           <div className="hidden items-center gap-3 md:flex">
             <span className="h-[6px] w-[6px] rounded-full bg-primary/70 animate-pulse-soft" />
-            <span className="font-hud text-foreground/55 tabular-nums">{time}</span>
+            <span className="font-hud text-foreground/70 tabular-nums">{time}</span>
           </div>
 
           <button
@@ -443,7 +443,7 @@ export function Nav() {
                         <span
                           className={cn(
                             "font-hud transition-colors",
-                            isActive ? "text-primary" : "text-foreground/55",
+                            isActive ? "text-primary" : "text-foreground/70",
                           )}
                         >
                           {item.code}
@@ -453,7 +453,7 @@ export function Nav() {
                   )
                 })}
               </nav>
-              <div className="font-hud flex items-center justify-between text-foreground/55">
+              <div className="font-hud flex items-center justify-between text-foreground/70">
                 <span>Vaish // {t("brand.tagline")}</span>
                 <span>{time}</span>
               </div>

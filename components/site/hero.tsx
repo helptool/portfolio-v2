@@ -113,6 +113,14 @@ function ScrambleWord({ word, delay = 0 }: { word: string; delay?: number }) {
  * A small drifting particle field, deterministic so SSR/CSR match.
  * Used only on mobile to add ambient density that desktop gets from the
  * extra plates and HUD readouts.
+ *
+ * Implementation note :: this used to drive each particle off framer's
+ * `repeat: Infinity` (one rAF subscriber per particle). On a phone with
+ * 16 particles + the hero's WebGL ember layer + the scroll-driven hero
+ * transforms it was non-trivial extra compositor work for what is just
+ * ambient sparkle. The new version is plain `<span>` + a single shared
+ * `@keyframes drift-y` + `@keyframes star-twinkle` triggered via tiny
+ * per-particle CSS variables. Identical motion, zero JS-side ticks.
  */
 function ParticleField({ count = 16 }: { count?: number }) {
   const particles = Array.from({ length: count }).map((_, i) => {
@@ -129,13 +137,37 @@ function ParticleField({ count = 16 }: { count?: number }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
       {particles.map((p) => (
-        <motion.span
+        /* Two dedicated keyframes stacked on a wrapper + inner span,
+           replicating the old framer values exactly :: outer span runs
+           `particle-drift` (translateY 0 -> -28px -> 0) and inner span
+           runs `particle-twinkle` (opacity 0 -> 0.85 -> 0). Both are
+           composited so there's no JS-side ticking. The generic
+           `drift-y` / `star-twinkle` keyframes nearby are tuned for
+           different elements and don't match these particles. */
+        <span
           key={p.id}
-          className="absolute rounded-full bg-primary/55"
-          style={{ left: p.left, top: p.top, width: p.size, height: p.size }}
-          animate={{ y: [0, -28, 0], opacity: [0, 0.85, 0] }}
-          transition={{ duration: p.dur, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
-        />
+          className="absolute animate-particle-drift"
+          style={
+            {
+              left: p.left,
+              top: p.top,
+              width: p.size,
+              height: p.size,
+              "--particle-dur": `${p.dur}s`,
+              "--particle-delay": `${p.delay}s`,
+            } as React.CSSProperties
+          }
+        >
+          <span
+            className="block h-full w-full rounded-full bg-primary/55 animate-particle-twinkle"
+            style={
+              {
+                "--particle-dur": `${p.dur}s`,
+                "--particle-delay": `${p.delay}s`,
+              } as React.CSSProperties
+            }
+          />
+        </span>
       ))}
     </div>
   )
@@ -476,7 +508,20 @@ export function Hero() {
           </motion.div>
 
           {/* Layer 5 :: drifting "stars" — deterministic dots seeded so SSR
-              and CSR match. No randomness on the client. */}
+              and CSR match. No randomness on the client.
+
+              Previously each of the 28 stars mounted a framer-motion
+              `<motion.span>` with its own `repeat: Infinity` animation
+              driver — i.e. 28 simultaneous JS rAF subscribers ticking
+              every frame just to lerp a single opacity number. That
+              showed up on slower devices as compositor backpressure
+              during the hero scroll sequence (which already ticks
+              another ~10 useTransform subscribers off the scroll
+              spring). Swapping to plain `<span>` + a single shared
+              `@keyframes star-twinkle` rule with per-element
+              `--star-dur` / `--star-delay` custom properties moves
+              the entire loop onto the compositor thread; React never
+              re-renders these spans and framer never subscribes them. */}
           <div aria-hidden className="absolute inset-0">
             {Array.from({ length: 28 }).map((_, i) => {
               const seed = i * 41.7
@@ -486,12 +531,23 @@ export function Hero() {
               const dur = 5 + (i % 4)
               const delay = (i * 0.18) % 4
               return (
-                <motion.span
+                <span
                   key={i}
-                  className="absolute rounded-full bg-foreground/70"
-                  style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}
-                  animate={reduce ? undefined : { opacity: [0.15, 0.85, 0.15] }}
-                  transition={{ duration: dur, delay, repeat: Infinity, ease: "easeInOut" }}
+                  className={
+                    reduce
+                      ? "absolute rounded-full bg-foreground/70"
+                      : "absolute rounded-full bg-foreground/70 animate-star-twinkle"
+                  }
+                  style={
+                    {
+                      left: `${x}%`,
+                      top: `${y}%`,
+                      width: size,
+                      height: size,
+                      "--star-dur": `${dur}s`,
+                      "--star-delay": `${delay}s`,
+                    } as React.CSSProperties
+                  }
                 />
               )
             })}
@@ -518,7 +574,7 @@ export function Hero() {
             initial={{ x: "0%" }}
             animate={{ x: "-50%" }}
             transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-            className="flex w-max items-center gap-6 py-2 font-hud text-foreground/55"
+            className="flex w-max items-center gap-6 py-2 font-hud text-foreground/70"
           >
             {Array.from({ length: 2 }).map((_, group) => (
               <div key={group} className="flex shrink-0 items-center gap-6">
@@ -580,7 +636,7 @@ export function Hero() {
           </div>
           <div className="font-wordmark-tight text-xl leading-tight mt-1 text-foreground">{brand.name}</div>
           <div className="mt-0.5 font-hud text-foreground/70">{t("hud.operator")} // {brand.creator}</div>
-          <div className="mt-2 flex items-center gap-2 font-hud text-foreground/55">
+          <div className="mt-2 flex items-center gap-2 font-hud text-foreground/70">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse-soft" />
             <span>{time || "00:00:00 UTC"}</span>
           </div>
@@ -787,7 +843,7 @@ export function Hero() {
             <>
               <motion.span
                 aria-hidden
-                className="font-display absolute text-foreground/55"
+                className="font-display absolute text-foreground/70"
                 style={{ left: "16%", top: "22%", fontSize: "1.35rem" }}
                 animate={{ y: [0, -8, 0], rotate: [0, 6, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
@@ -814,7 +870,7 @@ export function Hero() {
               </motion.span>
               <motion.span
                 aria-hidden
-                className="font-display absolute text-foreground/55"
+                className="font-display absolute text-foreground/70"
                 style={{ right: "20%", bottom: "22%", fontSize: "1.4rem" }}
                 animate={{ y: [0, 8, 0], rotate: [0, -5, 0] }}
                 transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
@@ -901,7 +957,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 1.0, ease: easeOut }}
-          className="mb-6 flex items-center gap-3 font-hud text-foreground/55"
+          className="mb-6 flex items-center gap-3 font-hud text-foreground/70"
         >
           <span className="inline-block h-px w-10 bg-foreground/30" />
           <span className="truncate">
@@ -921,6 +977,22 @@ export function Hero() {
             // chain keeps the engraved/serif feel before the woff2 chunk
             // for non-Latin scripts arrives.
             fontFamily: meta.wordmarkFont,
+            /* Hint the browser to lift the entire wordmark to its own
+               compositor layer. Combined with the per-letter
+               `will-change-transform` + `backface-visibility: hidden`
+               below, this stops scroll-bound x/scale transforms from
+               re-painting paint-heavy glyphs at clamp(86px,22vw,340px).
+               Fixes the user-reported "struggles to maintain animation
+               on scroll" lag on slower laptops.
+
+               NB :: do NOT add `contain: paint` here — the per-letter
+               `splitLeft` / `splitRight` transforms move letters up to
+               ±120px outside the H1's natural box. `contain: paint`
+               would hard-clip those translations exactly like
+               `overflow: hidden` and the signature wordmark split would
+               cut off mid-animation. `will-change` alone gives us the
+               compositor layer without the clipping side-effect. */
+            willChange: "transform",
           }}
         >
           <span className="flex items-baseline">
@@ -979,7 +1051,16 @@ export function Hero() {
                     initial={{ y: "115%", rotateZ: 6 }}
                     animate={{ y: "0%", rotateZ: 0 }}
                     transition={{ duration: 1.2, delay: 1.05 + i * 0.08, ease: easeOut }}
-                    className="inline-block will-change-transform"
+                    /* `will-change-transform` + `backface-visibility:hidden`
+                       force each letter into its own compositor layer so
+                       the scroll-bound `x` transform never repaints the
+                       glyph itself — the browser just translates the
+                       layer. At clamp(86px,22vw,340px) glyph sizes this
+                       is the difference between buttery and choppy on
+                       slower laptops; the user reported the wordmark
+                       "struggles to maintain animation on scroll" before
+                       this change. */
+                    className="inline-block will-change-transform [backface-visibility:hidden] [-webkit-backface-visibility:hidden]"
                   >
                     <AnimatePresence mode="wait" initial={false}>
                       <motion.span
@@ -1063,7 +1144,7 @@ export function Hero() {
               </span>
             </div>
 
-            <p className="hidden font-hud text-foreground/55 md:block">
+            <p className="hidden font-hud text-foreground/70 md:block">
               <ScrambleWord word={t("hero.scramble1").toUpperCase()} delay={1500} />
               <span className="text-foreground/35"> // </span>
               <ScrambleWord word={t("hero.scramble2").toUpperCase()} delay={1700} />

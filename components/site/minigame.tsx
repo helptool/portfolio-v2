@@ -57,7 +57,7 @@ export function MiniGame() {
         {/* Section header */}
         <div className="mb-8 sm:mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="font-hud text-foreground/55 mb-3 flex items-center gap-2">
+            <div className="font-hud text-foreground/70 mb-3 flex items-center gap-2">
               <span className="inline-block h-px w-8 bg-foreground/30" />
               <span>{t("arcade.kicker")}</span>
               <span className="ml-2 text-primary/80">{t("arcade.subtitle")}</span>
@@ -129,7 +129,7 @@ export function MiniGame() {
                 <div className="font-wordmark-tight text-[15px] sm:text-base font-semibold text-foreground leading-tight">
                   {g.name}
                 </div>
-                <div className="font-hud text-foreground/55 text-[9px] leading-tight line-clamp-2">
+                <div className="font-hud text-foreground/70 text-[9px] leading-tight line-clamp-2">
                   {g.kicker}
                 </div>
               </button>
@@ -170,7 +170,7 @@ export function MiniGame() {
                 className="frame-hairline p-4 sm:p-5 bg-background/40"
               >
                 <div className="flex items-baseline justify-between">
-                  <span className="font-hud text-foreground/55">{activeGame.code} // {t("arcade.brief")}</span>
+                  <span className="font-hud text-foreground/70">{activeGame.code} // {t("arcade.brief")}</span>
                   <span className="font-hud text-primary">LV.{activeGame.code.replace(/[^0-9]/g, "")}</span>
                 </div>
                 <div className="font-wordmark-tight text-xl font-semibold text-foreground mt-1">
@@ -180,17 +180,17 @@ export function MiniGame() {
                   {activeGame.brief}
                 </p>
                 <dl className="mt-4 space-y-2 text-sm">
-                  <div className="flex justify-between border-b border-foreground/10 pb-2 font-hud text-foreground/55">
+                  <div className="flex justify-between border-b border-foreground/10 pb-2 font-hud text-foreground/70">
                     <dt>{t("arcade.controls")}</dt>
                     <dd className="text-foreground/85">{activeGame.controls}</dd>
                   </div>
-                  <div className="flex justify-between border-b border-foreground/10 pb-2 font-hud text-foreground/55">
+                  <div className="flex justify-between border-b border-foreground/10 pb-2 font-hud text-foreground/70">
                     <dt>{t("arcade.duration")}</dt>
                     <dd className="text-foreground/85">
                       {activeGame.duration ? `${activeGame.duration}s` : t("arcade.endless")}
                     </dd>
                   </div>
-                  <div className="flex justify-between font-hud text-foreground/55">
+                  <div className="flex justify-between font-hud text-foreground/70">
                     <dt>{t("arcade.score")}</dt>
                     <dd className="text-foreground/85 uppercase">{activeGame.scoreUnit}</dd>
                   </div>
@@ -211,7 +211,7 @@ export function MiniGame() {
             </AnimatePresence>
 
             <div className="frame-hairline p-4 bg-background/40">
-              <div className="font-hud text-foreground/55 mb-2">{t("arcade.arcadist")}</div>
+              <div className="font-hud text-foreground/70 mb-2">{t("arcade.arcadist")}</div>
               <div className="font-wordmark-tight text-lg font-semibold text-foreground">
                 {playerName || "Aryaman V. Gupta"}
               </div>

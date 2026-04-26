@@ -31,7 +31,12 @@ export function Artifacts() {
           </div>
         </div>
 
-        <div className="mt-20 grid grid-cols-6 auto-rows-[minmax(0,1fr)] gap-4 md:grid-cols-12 md:gap-6">
+        {/* Explicit row height on desktop :: previously `auto-rows-[minmax(0,1fr)]`
+            with mismatched inner aspect-ratios produced an orphan cell because
+            the row baseline depended on whichever card had the tallest content.
+            Pinning rows to a clamp viewport unit + giving inner cards `h-full`
+            keeps every row identical so the bento always tiles cleanly. */}
+        <div className="mt-20 grid grid-cols-6 auto-rows-[minmax(0,1fr)] gap-4 md:grid-cols-12 md:auto-rows-[clamp(180px,18vw,260px)] md:gap-6">
           {artifacts.map((a, i) => (
             <ArtifactCard key={a.id} artifact={a} index={i} t={t} />
           ))}
@@ -82,17 +87,24 @@ function ArtifactCard({
     lift.set(0)
   }
 
-  // sizing pattern to create asymmetric layout on md+
+  // Bento layout :: every row sums to 12 so there are no orphan gaps.
+  //   Row 1 :: a1 (6×2 tall left) + a2 (3) + a3 (3)               = 12
+  //   Row 2 :: a1 cont          + a4 (3) + a5 (3)                  = 12
+  //   Row 3 :: a6 (12 full bottom)                                 = 12
   const spans = [
-    "md:col-span-5 md:row-span-2", // tall left
-    "md:col-span-4 md:row-span-1",
+    "md:col-span-6 md:row-span-2", // tall left
     "md:col-span-3 md:row-span-1",
     "md:col-span-3 md:row-span-1",
-    "md:col-span-4 md:row-span-1",
-    "md:col-span-5 md:row-span-1",
+    "md:col-span-3 md:row-span-1",
+    "md:col-span-3 md:row-span-1",
+    "md:col-span-12 md:row-span-1",
   ]
 
-  const aspects = ["aspect-[4/5]", "aspect-[5/4]", "aspect-square", "aspect-square", "aspect-[5/4]", "aspect-[6/4]"]
+  // Inner aspects only apply on mobile (single-column stack). On desktop
+  // the cell shape is dictated by the grid + auto-rows so we pin the
+  // inner box to h-full to avoid the row-height drift that produced the
+  // empty cell in the previous bento.
+  const aspects = ["aspect-[4/5]", "aspect-square", "aspect-square", "aspect-square", "aspect-square", "aspect-[3/1]"]
 
   return (
     <motion.div
@@ -110,7 +122,7 @@ function ArtifactCard({
     >
       <motion.div
         style={{ y: ry }}
-        className={`relative ${aspects[index] ?? "aspect-[4/5]"} w-full overflow-hidden border border-foreground/10 bg-[oklch(0.14_0.01_45)]`}
+        className={`relative ${aspects[index] ?? "aspect-[4/5]"} w-full overflow-hidden border border-foreground/10 bg-[oklch(0.14_0.01_45)] md:aspect-auto md:h-full`}
       >
         <ArtifactGlyph letter={artifact.name.charAt(0)} index={index} />
 

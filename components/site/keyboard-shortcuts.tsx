@@ -161,7 +161,7 @@ export function KeyboardShortcuts() {
             </ul>
 
             {/* Status block :: shows ambient state without leaking secrets. */}
-            <div className="mt-7 grid grid-cols-2 gap-4 border-t border-primary/15 pt-5 font-mono text-[11px] text-foreground/55">
+            <div className="mt-7 grid grid-cols-2 gap-4 border-t border-primary/15 pt-5 font-mono text-[11px] text-foreground/70">
               <div>
                 <div className="text-primary/75">// runes</div>
                 <span aria-live="polite">

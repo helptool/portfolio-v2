@@ -319,7 +319,7 @@ export function RuneMatchGame() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between font-hud text-foreground/55">
+      <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between font-hud text-foreground/70">
         <span>Best // {String(best).padStart(3, "0")}</span>
         <span className="hidden sm:inline">Find all 8 pairs before the veil closes</span>
       </div>
@@ -339,7 +339,7 @@ export function RuneMatchGame() {
               transition={{ duration: 0.7, delay: 0.1 }}
               className="text-center px-6"
             >
-              <div className="font-hud text-foreground/55 mb-3">
+              <div className="font-hud text-foreground/70 mb-3">
                 {phase === "won" ? "All Pairs Found" : phase === "lost" ? "Veil Closed" : "Pair Trial"}
               </div>
               <div className="font-wordmark-tight font-semibold text-5xl sm:text-6xl">

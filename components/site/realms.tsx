@@ -155,24 +155,24 @@ export function Realms() {
         <div className="pointer-events-none absolute left-0 right-0 top-24 z-20 flex items-start justify-between px-5 md:top-28 md:px-10">
           <div className="flex items-center gap-3">
             <span className="block h-px w-8 bg-foreground/30" />
-            <span className="font-hud text-foreground/55">{t("realms.kicker")}</span>
+            <span className="font-hud text-foreground/70">{t("realms.kicker")}</span>
           </div>
           <div className="flex items-baseline gap-2 text-right">
             <span className="font-display text-5xl leading-none tabular-nums text-foreground md:text-6xl">
               {String(active + 1).padStart(2, "0")}
             </span>
-            <span className="font-hud text-foreground/55">/ {String(realms.length).padStart(2, "0")}</span>
+            <span className="font-hud text-foreground/70">/ {String(realms.length).padStart(2, "0")}</span>
           </div>
         </div>
 
         {/* Bottom HUD */}
         <div className="pointer-events-none absolute bottom-10 left-5 z-20 hidden items-center gap-3 md:flex md:left-10">
           <span className="h-[6px] w-[6px] rounded-full bg-primary animate-pulse-soft" />
-          <span className="font-hud text-foreground/55">{t("realms.scrollHint")}</span>
+          <span className="font-hud text-foreground/70">{t("realms.scrollHint")}</span>
         </div>
 
         <div className="pointer-events-none absolute bottom-10 right-5 z-20 hidden w-[240px] md:block md:right-10">
-          <div className="mb-2 flex items-center justify-between font-hud text-foreground/55">
+          <div className="mb-2 flex items-center justify-between font-hud text-foreground/70">
             <span>{realms[active]?.name}</span>
             <span className="tabular-nums">
               {String(Math.round(((active + 1) / realms.length) * 100)).padStart(2, "0")}%
@@ -250,7 +250,7 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
           <div className="flex flex-wrap items-center gap-3">
             <span className="font-hud text-primary">{t("realms.project")} {realm.index}</span>
             <span className="h-px w-8 bg-foreground/30" />
-            <span className="font-hud text-foreground/55">{t(realm.kindKey)}</span>
+            <span className="font-hud text-foreground/70">{t(realm.kindKey)}</span>
           </div>
 
           {/* Split per-word, then per-letter inside each word. The
@@ -318,7 +318,7 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 16 }}
             transition={{ duration: 0.7, delay: 0.5 }}
-            className="mt-6 font-hud text-foreground/55"
+            className="mt-6 font-hud text-foreground/70"
           >
             {t("realms.role")} // <span className="text-foreground">{t(realm.roleKey)}</span>
           </motion.div>
@@ -331,7 +331,7 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
           >
             {Object.entries(realm.stats).map(([k, v]) => (
               <div key={k} className="flex flex-col gap-1">
-                <dt className="font-hud text-foreground/55">{t(`realms.${k}`)}</dt>
+                <dt className="font-hud text-foreground/70">{t(`realms.${k}`)}</dt>
                 <dd className="font-display text-2xl text-foreground tabular-nums">{v}</dd>
               </div>
             ))}
