@@ -348,7 +348,7 @@ export function DividerFluid({ className, intensity = 1 }: Props) {
       gl.deleteShader(vs)
       gl.deleteShader(fs)
     }
-  }, [enabled, reduced])
+  }, [enabled, reduced, nearViewport])
 
   if (!enabled) return null
   return (

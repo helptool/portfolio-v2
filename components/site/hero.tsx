@@ -948,7 +948,7 @@ export function Hero() {
                   : l === "A" || l === "Â"
                     ? "-0.01em"
                     : "0em"
-                : i < 4
+                : i < len - 1
                   ? "0.02em"
                   : "0em"
               return (
