@@ -327,6 +327,14 @@ export function HeroAura({ className }: Props) {
           if (visible && !raf) {
             last = performance.now()
             blownFrames = 0
+            // Reset scroll-velocity baselines on resume :: while the
+            // hero was off-screen `lastScrollY` froze, so the first
+            // tick after re-intersection would otherwise compute the
+            // entire distance scrolled during the paused window as a
+            // single-frame delta and trigger a spurious aberration
+            // burst. Anchor to current scroll + zero velocity instead.
+            lastScrollY = window.scrollY
+            velocity = 0
             raf = requestAnimationFrame(tick)
           }
         }
