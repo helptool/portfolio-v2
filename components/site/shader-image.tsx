@@ -26,6 +26,7 @@ import Image, { type ImageProps } from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useReducedMotion } from "framer-motion"
 import { SHIMMER } from "@/lib/shimmer"
+import { useFinePointer } from "@/lib/hooks"
 import { cn } from "@/lib/utils"
 
 type Props = Omit<ImageProps, "placeholder" | "blurDataURL" | "onLoad"> & {
@@ -156,11 +157,19 @@ export function ShaderImage({
   const [imgLoaded, setImgLoaded] = useState(false)
   const [shaderActive, setShaderActive] = useState(false)
   const reduced = useReducedMotion()
+  // The displacement is a hover/proximity reaction. On a touch device
+  // there's no cursor to displace toward, the shader just runs the
+  // ambient simplex warp — which is invisible to most users but burns a
+  // continuous rAF loop, an extra GPU pass, and one full-viewport canvas
+  // composite per frame. Skip the shader entirely on coarse pointers and
+  // let the underlying <Image> render flat.
+  const finePointer = useFinePointer()
+  const shaderEnabled = !reduced && finePointer
 
   /* Boot the shader once the source image has loaded AND reduced-motion is
-     not requested AND WebGL is supported. */
+     not requested AND WebGL is supported AND we have a fine pointer. */
   useEffect(() => {
-    if (reduced || !imgLoaded) return
+    if (!shaderEnabled || !imgLoaded) return
     const canvas = canvasRef.current
     const container = containerRef.current
     const img = imgRef.current
@@ -272,8 +281,16 @@ export function ShaderImage({
     const ro = new ResizeObserver(resize)
     ro.observe(container)
 
+    /* IntersectionObserver pause :: the manifesto portrait is below the
+       fold; on a long scroll most of the time the canvas is offscreen.
+       Idling the rAF saves ~1ms of GPU + JS per frame. Resume on re-enter. */
+    let inView = true
     const start = performance.now()
     const render = () => {
+      if (!inView) {
+        rafId = 0
+        return
+      }
       const t = (performance.now() - start) / 1000
       // Smooth mouse + warp toward target — feels less twitchy than raw input.
       mouseX += (targetMouseX - mouseX) * 0.08
@@ -302,8 +319,25 @@ export function ShaderImage({
     rafId = requestAnimationFrame(render)
     setShaderActive(true)
 
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          inView = entry.isIntersecting
+          if (inView && !rafId) {
+            rafId = requestAnimationFrame(render)
+          } else if (!inView && rafId) {
+            cancelAnimationFrame(rafId)
+            rafId = 0
+          }
+        }
+      },
+      { rootMargin: "100px" },
+    )
+    io.observe(container)
+
     return () => {
-      cancelAnimationFrame(rafId)
+      if (rafId) cancelAnimationFrame(rafId)
+      io.disconnect()
       ro.disconnect()
       container.removeEventListener("pointermove", onMove)
       container.removeEventListener("pointerleave", onLeave)
@@ -314,7 +348,7 @@ export function ShaderImage({
       gl.deleteShader(frag)
       setShaderActive(false)
     }
-  }, [reduced, imgLoaded, baseWarp, hoverWarp, chromaticAberration])
+  }, [shaderEnabled, imgLoaded, baseWarp, hoverWarp, chromaticAberration])
 
   return (
     <div
@@ -348,7 +382,7 @@ export function ShaderImage({
         }}
       />
       {/* Canvas overlay, painted on top of the image once shader is live. */}
-      {!reduced && (
+      {shaderEnabled && (
         <canvas
           ref={canvasRef}
           aria-hidden

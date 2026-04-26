@@ -15,6 +15,7 @@
 
 import { useReducedMotion } from "framer-motion"
 import { useEffect, useRef } from "react"
+import { useFinePointer } from "@/lib/hooks"
 
 type Props = {
   children: string
@@ -33,10 +34,16 @@ export function LetterTilt({
 }: Props) {
   const ref = useRef<HTMLSpanElement>(null)
   const reduced = useReducedMotion()
+  // Pure mouse-tracking effect. On touch devices the pointermove listener
+  // never fires productively but the per-character DOM scaffold still
+  // mounts (one inline-block span per letter). On a 143-character subline
+  // that's 143 extra elements + 143 inline transforms the browser has to
+  // composite for nothing — a measurable mobile cost. Bail to plain text.
+  const finePointer = useFinePointer()
 
   // Track cursor in document coordinates via a single window listener.
   useEffect(() => {
-    if (reduced) return
+    if (reduced || !finePointer) return
     const root = ref.current
     if (!root) return
     const letters = Array.from(root.querySelectorAll<HTMLElement>("[data-tilt-char]"))
@@ -82,10 +89,10 @@ export function LetterTilt({
     // switches and the subline string changes (lengths vary 39..143 chars
     // across en/es/fr/ja/hi). Without it, the captured DOM refs would
     // point at unmounted spans and getBoundingClientRect would return 0s.
-  }, [reduced, maxTilt, radius, children])
+  }, [reduced, finePointer, maxTilt, radius, children])
 
-  if (reduced) {
-    // Flat fallback :: render plain text, no listeners attached.
+  if (reduced || !finePointer) {
+    // Flat fallback :: render plain text, no per-letter scaffold.
     return <span className={className}>{children}</span>
   }
 
