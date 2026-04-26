@@ -91,9 +91,52 @@ export function LetterTilt({
     // point at unmounted spans and getBoundingClientRect would return 0s.
   }, [reduced, finePointer, maxTilt, radius, children])
 
-  if (reduced || !finePointer) {
-    // Flat fallback :: render plain text, no per-letter scaffold.
+  if (reduced) {
+    // Reduced-motion :: render plain text, no animation at all.
     return <span className={className}>{children}</span>
+  }
+
+  /* Touch / coarse-pointer fallback :: previously rendered plain text
+     and dropped the per-letter scaffold entirely. Visually the wordmark
+     felt static on phones — the user reported "many features missing
+     from mobile". Now the touch path renders the same per-letter
+     scaffold but with a tiny CSS-driven continuous wave (no JS, no
+     pointer listeners, ~zero compositor cost). Each letter gets a
+     staggered `--letter-delay` so the wave reads as a slow ripple
+     across the line rather than every letter pulsing in sync. */
+  if (!finePointer) {
+    const words = children.split(/(\s+)/)
+    return (
+      <span className={className} aria-label={children}>
+        {words.map((word, wi) => {
+          if (/^\s+$/.test(word)) {
+            return <span key={`s-${wi}`}>{word}</span>
+          }
+          const chars = Array.from(word)
+          return (
+            <span
+              key={`w-${wi}`}
+              aria-hidden
+              style={{ display: "inline-block", whiteSpace: "nowrap" }}
+            >
+              {chars.map((ch, ci) => (
+                <span
+                  key={ci}
+                  className="inline-block animate-letter-wave"
+                  style={
+                    {
+                      "--letter-delay": `${((wi * 7 + ci) % 12) * 0.12}s`,
+                    } as React.CSSProperties
+                  }
+                >
+                  {ch}
+                </span>
+              ))}
+            </span>
+          )
+        })}
+      </span>
+    )
   }
 
   // Split into words first, then characters within each word. This is the

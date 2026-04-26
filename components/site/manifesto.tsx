@@ -194,10 +194,10 @@ function PortraitPlate() {
         <div className="absolute left-4 bottom-4 right-4 flex items-end justify-between font-hud text-foreground/85">
           <div>
             <div className="text-foreground">{brand.creator}</div>
-            <div className="text-foreground/55">{t("op.role")}</div>
+            <div className="text-foreground/70">{t("op.role")}</div>
           </div>
           <div className="text-right">
-            <div className="text-foreground/55">{t("op.basedIn")}</div>
+            <div className="text-foreground/70">{t("op.basedIn")}</div>
             <div className="text-foreground">{t("brand.location")}</div>
           </div>
         </div>
@@ -337,7 +337,7 @@ export function Manifesto() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.9, ease: easeOut }}
-            className="flex items-center gap-3 font-hud text-foreground/55"
+            className="flex items-center gap-3 font-hud text-foreground/70"
           >
             <span className="inline-block h-px w-10 bg-foreground/30" />
             <span>{t("op.kicker")}</span>
@@ -347,7 +347,7 @@ export function Manifesto() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.9, delay: 0.1, ease: easeOut }}
-            className="hidden items-center gap-3 font-hud text-foreground/55 sm:flex"
+            className="hidden items-center gap-3 font-hud text-foreground/70 sm:flex"
           >
             <span>{t("op.frame")}</span>
             <span className="inline-block h-1.5 w-1.5 animate-pulse-soft rounded-full bg-primary" />
@@ -417,19 +417,19 @@ export function Manifesto() {
                 <div className="font-wordmark-tight text-3xl font-semibold text-foreground">
                   <Counter to={6} suffix="+" />
                 </div>
-                <div className="mt-1 font-hud text-foreground/55">{t("op.stat1")}</div>
+                <div className="mt-1 font-hud text-foreground/70">{t("op.stat1")}</div>
               </div>
               <div>
                 <div className="font-wordmark-tight text-3xl font-semibold text-foreground">
                   <Counter to={48} />
                 </div>
-                <div className="mt-1 font-hud text-foreground/55">{t("op.stat2")}</div>
+                <div className="mt-1 font-hud text-foreground/70">{t("op.stat2")}</div>
               </div>
               <div>
                 <div className="font-wordmark-tight text-3xl font-semibold text-foreground">
                   <Counter to={12} />
                 </div>
-                <div className="mt-1 font-hud text-foreground/55">{t("op.stat3")}</div>
+                <div className="mt-1 font-hud text-foreground/70">{t("op.stat3")}</div>
               </div>
             </div>
           </div>
@@ -487,7 +487,7 @@ export function Manifesto() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.9, ease: easeOut }}
-            className="mt-14 grid grid-cols-2 gap-6 border-t border-foreground/10 pt-6 font-hud text-foreground/55 sm:grid-cols-4"
+            className="mt-14 grid grid-cols-2 gap-6 border-t border-foreground/10 pt-6 font-hud text-foreground/70 sm:grid-cols-4"
           >
             <div>
               <div className="text-foreground/45">{t("op.row.now")}</div>

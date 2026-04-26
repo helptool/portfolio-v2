@@ -75,7 +75,7 @@ export function AboutVaish() {
           className="col-span-12 flex items-center gap-3 md:col-span-3"
         >
           <span className="block h-px w-8 bg-foreground/30" />
-          <span className="font-hud text-foreground/55">{t("vaish.kicker")}</span>
+          <span className="font-hud text-foreground/70">{t("vaish.kicker")}</span>
         </motion.div>
 
         {/* Heading + body */}
@@ -120,7 +120,7 @@ export function AboutVaish() {
               transition={{ duration: 0.9, delay: 0.25 }}
               className="mt-8"
             >
-              <div className="mb-3 flex items-center justify-between font-hud text-foreground/55">
+              <div className="mb-3 flex items-center justify-between font-hud text-foreground/70">
                 <span>{t("vaish.metrics")}</span>
                 <span className="h-px flex-1 mx-3 bg-foreground/10" />
                 <span className="text-primary">04 // 04</span>
@@ -138,7 +138,7 @@ export function AboutVaish() {
                     <div className="corner-tl" />
                     <div className="corner-br" />
                     <div className="font-display text-4xl leading-none tabular-nums">{s.value}</div>
-                    <div className="mt-2 font-hud text-foreground/55">{s.label}</div>
+                    <div className="mt-2 font-hud text-foreground/70">{s.label}</div>
                   </motion.div>
                 ))}
               </div>
@@ -354,7 +354,7 @@ function VaishDiagram() {
       </div>
 
       {/* HUD caption */}
-      <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between font-hud text-foreground/55">
+      <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between font-hud text-foreground/70">
         <span>VSH // SCHEMATIC</span>
         <span className="flex items-center gap-2">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse-soft" />

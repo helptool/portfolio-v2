@@ -376,7 +376,7 @@ export function RuneChaseGame() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between font-hud text-foreground/55">
+      <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between font-hud text-foreground/70">
         <span>Best // {String(best).padStart(3, "0")}</span>
         <span className="hidden sm:inline">Move // Mouse + Arrows + WASD</span>
         <span className="sm:hidden">Drag to move</span>
@@ -411,7 +411,7 @@ export function RuneChaseGame() {
               transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="text-center px-6"
             >
-              <div className="font-hud text-foreground/55 mb-3">{phase === "ended" ? "Round Complete" : "Ritual Awaits"}</div>
+              <div className="font-hud text-foreground/70 mb-3">{phase === "ended" ? "Round Complete" : "Ritual Awaits"}</div>
               <div className="font-wordmark-tight font-semibold text-5xl sm:text-6xl">
                 {phase === "ended" ? (
                   <>You scored <span className="text-primary">{score}</span></>

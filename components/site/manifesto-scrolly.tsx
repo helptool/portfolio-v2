@@ -255,7 +255,7 @@ export function ManifestoScrolly() {
 
         {/* Top-left HUD label :: tells the reader what this section is.
             Static, doesn't move with the scrub — anchors the stage. */}
-        <div className="absolute left-5 top-6 z-10 flex items-center gap-3 font-hud text-xs uppercase tracking-[0.35em] text-foreground/55 sm:left-8 sm:top-8">
+        <div className="absolute left-5 top-6 z-10 flex items-center gap-3 font-hud text-xs uppercase tracking-[0.35em] text-foreground/70 sm:left-8 sm:top-8">
           <span className="inline-block h-px w-8 bg-foreground/30" />
           <span>Principles</span>
         </div>
