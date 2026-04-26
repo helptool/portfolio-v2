@@ -4,6 +4,7 @@ import Image, { type ImageProps } from "next/image"
 import { useRef, useState } from "react"
 import { useReducedMotion } from "framer-motion"
 import { SHIMMER } from "@/lib/shimmer"
+import { useFinePointer } from "@/lib/hooks"
 import { cn } from "@/lib/utils"
 
 /* ---------------------------------------------------------------------------
@@ -58,6 +59,12 @@ export function RevealImage({
   const ref = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(false)
   const reduced = useReducedMotion()
+  // Cursor porthole only makes sense with a fine pointer. On touch a tap
+  // would briefly fire the mask + ring + alt-image render once, then
+  // disappear — confusing UX and dead overhead. Treat coarse pointers the
+  // same as reduced-motion: skip the reveal layer entirely.
+  const finePointer = useFinePointer()
+  const enabled = !reduced && finePointer
 
   const updatePosition = (e: React.PointerEvent<HTMLDivElement>) => {
     const r = ref.current?.getBoundingClientRect()
@@ -71,11 +78,11 @@ export function RevealImage({
   return (
     <div
       ref={ref}
-      data-cursor={reduced ? undefined : "view"}
-      data-cursor-label={reduced ? undefined : revealLabel || "Untold"}
-      onPointerEnter={() => !reduced && setActive(true)}
-      onPointerLeave={() => !reduced && setActive(false)}
-      onPointerMove={reduced ? undefined : updatePosition}
+      data-cursor={enabled ? "view" : undefined}
+      data-cursor-label={enabled ? revealLabel || "Untold" : undefined}
+      onPointerEnter={enabled ? () => setActive(true) : undefined}
+      onPointerLeave={enabled ? () => setActive(false) : undefined}
+      onPointerMove={enabled ? updatePosition : undefined}
       className={cn("relative overflow-hidden", className)}
       style={
         {
@@ -97,7 +104,7 @@ export function RevealImage({
       />
 
       {/* Reveal layer :: the alternate, masked to a soft circle. */}
-      {!reduced && (
+      {enabled && (
         <div
           aria-hidden={!active}
           className="pointer-events-none absolute inset-0 transition-opacity duration-300 ease-out"
@@ -127,7 +134,7 @@ export function RevealImage({
       {/* Cursor-following hint ring :: a thin copper outline traces the
           porthole edge on the active state. Pointer-events:none so it
           never interferes with hover. */}
-      {!reduced && (
+      {enabled && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 transition-opacity duration-200"
