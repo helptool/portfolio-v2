@@ -25,6 +25,16 @@ import { useRunes } from "./runes-context"
 // client bundle; the GPU work only kicks off after hydration. Falls back
 // to nothing during SSR (the page already has the legacy CSS particle
 // layer below as a paint-time placeholder while the chunk loads).
+/* HeroAura is dynamically imported because the WebGL context, fragment
+   shader compile + the rAF loop are pure post-hydration concerns; the
+   component already gates itself on `(hover: hover) and (pointer: fine)`
+   but lazy-loading also keeps the module out of the SSR bundle. The
+   hero already paints completely without it (aether plate + particles)
+   so deferring HeroAura by one frame doesn't leave a visible gap. */
+const HeroAura = dynamic(() => import("./hero-aura").then((m) => m.HeroAura), {
+  ssr: false,
+})
+
 const ParticleFieldGL = dynamic(
   () => import("./particle-field-gl").then((m) => m.ParticleFieldGL),
   { ssr: false }
@@ -282,6 +292,14 @@ export function Hero() {
         <ParticleField count={12} />
         <ParticleFieldGL className="pointer-events-none absolute inset-0" />
       </div>
+
+      {/* WebGL atmospheric layer :: copper + teal nebula on a 3-octave
+          FBM noise field, with a cursor-tracked bloom that softens
+          toward the pointer and chromatic aberration that ramps with
+          scroll velocity. Mounted only on fine pointers; self-pauses
+          when the hero scrolls off-screen. Sits BEHIND the aether
+          plate so the geometric structure stays clean. */}
+      <HeroAura className="pointer-events-none absolute inset-0 mix-blend-screen" />
 
       {/* ============================================================ *
        * AETHER BACKDROP :: replaces the silhouette photograph with    *
