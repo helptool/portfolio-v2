@@ -4,6 +4,7 @@ import { Nav } from "@/components/site/nav"
 import { Hero } from "@/components/site/hero"
 import { AboutVaish } from "@/components/site/about-vaish"
 import { Manifesto } from "@/components/site/manifesto"
+import { ManifestoScrolly } from "@/components/site/manifesto-scrolly"
 import { Realms } from "@/components/site/realms"
 import { Classes } from "@/components/site/classes"
 import { Codex } from "@/components/site/codex"
@@ -117,6 +118,13 @@ export default function Page() {
       <SectionReveal flavor="cinema" caption="CUE // 02 — OPERATOR">
         <Manifesto />
       </SectionReveal>
+
+      {/* Scrollytelling principles :: lives between OPERATOR and WORKS
+          so it acts as a deliberate pause — the reader has just met the
+          person, now they read the practice as a four-act recital. On
+          touch / reduced-motion this falls back to a static stack so it
+          never fights momentum scroll. */}
+      <ManifestoScrolly />
 
       <RuneDivider index="03" labelKey="divider.works" />
       <SectionReveal flavor="ascend" caption="CUE // 03 — WORKS">
