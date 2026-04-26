@@ -137,20 +137,37 @@ function ParticleField({ count = 16 }: { count?: number }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
       {particles.map((p) => (
+        /* Two animations stacked on the same element :: opacity twinkle
+           (from the shared `star-twinkle` keyframe) + a vertical drift
+           wrapper (`drift-y` on the outer span). The old framer
+           implementation animated `y: [0, -28, 0]` and `opacity: [0,
+           0.85, 0]` simultaneously; we replicate that with a wrapper +
+           inner span so each property uses its own GPU-only keyframe
+           and stays composited. */
         <span
           key={p.id}
-          className="absolute rounded-full bg-primary/55 animate-star-twinkle"
+          className="absolute animate-drift-y"
           style={
             {
               left: p.left,
               top: p.top,
               width: p.size,
               height: p.size,
-              "--star-dur": `${p.dur}s`,
-              "--star-delay": `${p.delay}s`,
+              animationDuration: `${p.dur}s`,
+              animationDelay: `${p.delay}s`,
             } as React.CSSProperties
           }
-        />
+        >
+          <span
+            className="block h-full w-full rounded-full bg-primary/55 animate-star-twinkle"
+            style={
+              {
+                "--star-dur": `${p.dur}s`,
+                "--star-delay": `${p.delay}s`,
+              } as React.CSSProperties
+            }
+          />
+        </span>
       ))}
     </div>
   )
@@ -966,9 +983,16 @@ export function Hero() {
                below, this stops scroll-bound x/scale transforms from
                re-painting paint-heavy glyphs at clamp(86px,22vw,340px).
                Fixes the user-reported "struggles to maintain animation
-               on scroll" lag on slower laptops. */
+               on scroll" lag on slower laptops.
+
+               NB :: do NOT add `contain: paint` here — the per-letter
+               `splitLeft` / `splitRight` transforms move letters up to
+               ±120px outside the H1's natural box. `contain: paint`
+               would hard-clip those translations exactly like
+               `overflow: hidden` and the signature wordmark split would
+               cut off mid-animation. `will-change` alone gives us the
+               compositor layer without the clipping side-effect. */
             willChange: "transform",
-            contain: "paint",
           }}
         >
           <span className="flex items-baseline">
