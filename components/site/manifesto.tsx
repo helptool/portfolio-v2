@@ -162,8 +162,14 @@ function PortraitPlate() {
           />
         </motion.div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/10 to-background/30 mix-blend-multiply" />
-        <div className="absolute inset-0 mix-blend-soft-light bg-gradient-to-br from-primary/15 via-transparent to-transparent" />
+        {/* Decorative gradient overlays sit ON TOP of the ShaderImage
+            canvas. Without `pointer-events-none` they eat every mouse
+            event before it reaches the canvas, which is what was
+            preventing the clearOnHover behaviour from firing — the
+            ShaderImage's pointermove handler never received an event,
+            so warp/aberration stayed at their idle full values. */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/80 via-background/10 to-background/30 mix-blend-multiply" />
+        <div className="pointer-events-none absolute inset-0 mix-blend-soft-light bg-gradient-to-br from-primary/15 via-transparent to-transparent" />
 
         <motion.span
           aria-hidden
