@@ -121,12 +121,17 @@ export function ManifestoScrolly() {
   const t = useT()
   const sectionRef = useRef<HTMLDivElement>(null)
   const reduced = useReducedMotion()
-  const [isFinePointer, setFinePointer] = useState(true)
+  const [isFinePointer, setFinePointer] = useState(false)
 
   /* The fine-pointer / touch detection runs after mount because matchMedia
-     can return stale values during SSR hydration. We optimistically
-     render the pinned version, then fall back to the static stack on
-     touch — this matches how we gate the rest of the site's effects. */
+     is a client-only API. We default to `false` (the static stack) and
+     opt up to the pinned 400vh version once the client confirms a fine
+     pointer — same convention as hero-aura.tsx, divider-fluid.tsx, and
+     custom-cursor.tsx. Starting `true` would render a 400vh tall section
+     during SSR, then collapse to ~100vh on mobile after hydration,
+     producing a large layout shift that can teleport the reader to an
+     unrelated part of the page. Adding scroll length on desktop is the
+     less disorienting direction of change. */
   useEffect(() => {
     if (typeof window === "undefined") return
     const mql = window.matchMedia("(hover: hover) and (pointer: fine)")
