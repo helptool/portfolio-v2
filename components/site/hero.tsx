@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import {
   motion,
+  AnimatePresence,
   useScroll,
   useTransform,
   useMotionValue,
@@ -17,7 +18,7 @@ import { brand } from "@/lib/vaish"
 import { Magnetic } from "./magnetic"
 import { LetterTilt } from "./letter-tilt"
 import { ScrollWeight } from "./scroll-weight"
-import { useT } from "./i18n-context"
+import { useI18n, useT } from "./i18n-context"
 import { useRunes } from "./runes-context"
 
 // Lazy-loaded WebGL ember field. Excluded from SSR + the hero's initial
@@ -98,8 +99,6 @@ function ScrambleWord({ word, delay = 0 }: { word: string; delay?: number }) {
   return <span>{text}</span>
 }
 
-const titleLetters = ["V", "A", "I", "S", "H"]
-
 /**
  * A small drifting particle field, deterministic so SSR/CSR match.
  * Used only on mobile to add ambient density that desktop gets from the
@@ -136,6 +135,7 @@ export function Hero() {
   const ref = useRef<HTMLElement>(null)
   const reduce = useReducedMotion() ?? false
   const t = useT()
+  const { lang, meta } = useI18n()
   const time = useUtcTime()
   const { addRune, hasRune } = useRunes()
 
@@ -895,19 +895,51 @@ export function Hero() {
         <h1
           onClick={onWordmarkClick}
           className="font-wordmark-tight text-[clamp(86px,22vw,340px)] font-semibold leading-[0.82] text-foreground"
-          style={{ letterSpacing: "-0.035em", fontFeatureSettings: "'kern' 1, 'liga' 1" }}
+          style={{
+            letterSpacing: "-0.035em",
+            fontFeatureSettings: "'kern' 1, 'liga' 1",
+            // 3D context for the per-letter rotateX flip during morph.
+            // Set on the H1 so individual glyphs share the same vanishing
+            // point — otherwise each glyph computes its own perspective
+            // and the flip looks staggered along the z-axis.
+            perspective: 800,
+            // Per-locale font swap :: Bodoni for Latin, Noto Serif JP for
+            // katakana, Noto Serif Devanagari for हिन्दी. The fallback
+            // chain keeps the engraved/serif feel before the woff2 chunk
+            // for non-Latin scripts arrives.
+            fontFamily: meta.wordmarkFont,
+          }}
         >
-          <span className="flex items-baseline">
-            {titleLetters.map((l, i) => {
+          <span className="flex items-baseline" style={{ transformStyle: "preserve-3d" }}>
+            {meta.wordmark.map((l, i) => {
               const isLeft = i < 2
               const isMid = i === 2
               const isRight = i > 2
+              /* Per-locale kern :: Bodoni's V/A pair has aggressive
+                 negative kern that other scripts don't need. Katakana
+                 and Devanagari render with their own optical spacing,
+                 so we just give them a thin air gap. */
+              const isLatin = lang === "en" || lang === "fr" || lang === "es"
+              const marginRight = isLatin
+                ? l === "V"
+                  ? "-0.09em"
+                  : l === "A" || l === "Â"
+                    ? "-0.01em"
+                    : "0em"
+                : i < 4
+                  ? "0.02em"
+                  : "0em"
               return (
                 <span
                   key={i}
                   className="relative inline-block overflow-hidden [line-height:0.82]"
-                  style={{ marginRight: l === "V" ? "-0.09em" : l === "A" ? "-0.01em" : "0em" }}
+                  style={{ marginRight }}
                 >
+                  {/* Outer motion.span carries the scroll-driven split
+                      (left/mid/right) which is independent of locale.
+                      The inner AnimatePresence cross-fades the actual
+                      glyph when `lang` changes — flip + blur reads as
+                      a morph without dishonest path interpolation. */}
                   <motion.span
                     style={{
                       x: isLeft ? splitLeft : isRight ? splitRight : 0,
@@ -918,7 +950,34 @@ export function Hero() {
                     transition={{ duration: 1.2, delay: 1.05 + i * 0.08, ease: easeOut }}
                     className="inline-block will-change-transform"
                   >
-                    {l}
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.span
+                        key={`${lang}-${l}`}
+                        initial={
+                          reduce
+                            ? { opacity: 0 }
+                            : { opacity: 0, rotateX: -55, filter: "blur(6px)", y: "0.4em" }
+                        }
+                        animate={
+                          reduce
+                            ? { opacity: 1 }
+                            : { opacity: 1, rotateX: 0, filter: "blur(0px)", y: "0em" }
+                        }
+                        exit={
+                          reduce
+                            ? { opacity: 0 }
+                            : { opacity: 0, rotateX: 55, filter: "blur(6px)", y: "-0.4em" }
+                        }
+                        transition={{
+                          duration: reduce ? 0.18 : 0.55,
+                          delay: reduce ? 0 : i * 0.045,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="inline-block"
+                      >
+                        {l}
+                      </motion.span>
+                    </AnimatePresence>
                   </motion.span>
                 </span>
               )

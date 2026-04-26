@@ -12,14 +12,82 @@ export type LanguageMeta = {
   greeting: string
   region: string
   image: string
+  /* Wordmark glyphs :: the brand reads "VAISH" but each locale gets a
+     5-glyph rendering in its own script. The hero swaps between these
+     during language change so visitors who switch tongues see the mark
+     re-render in their writing system. Always exactly 5 glyphs to
+     preserve the lockup rhythm. */
+  wordmark: [string, string, string, string, string]
+  /* Font stack used when rendering the wordmark for this locale. The
+     Latin scripts use the variable Bodoni Moda; CJK and Devanagari fall
+     back to Noto serif fonts so the engraved character of the lockup
+     survives outside the Latin-only foundry. */
+  wordmarkFont: string
 }
 
+const LATIN_WORDMARK_FONT = "var(--font-wordmark), Didot, 'Cormorant Garamond', Georgia, serif"
+const CJK_WORDMARK_FONT = "'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif"
+const DEVANAGARI_WORDMARK_FONT = "'Noto Serif Devanagari', 'Tiro Devanagari Hindi', serif"
+
 export const LANGUAGES: LanguageMeta[] = [
-  { code: "en", label: "English", native: "English", greeting: "Farewell, wanderer.", region: "London // United Kingdom", image: "/lang/en.jpg" },
-  { code: "fr", label: "Français", native: "Français", greeting: "Au revoir, voyageur.", region: "Paris // France", image: "/lang/fr.jpg" },
-  { code: "ja", label: "日本語", native: "日本語", greeting: "さようなら、旅人。", region: "Fuji // Japan", image: "/lang/ja.jpg" },
-  { code: "es", label: "Español", native: "Español", greeting: "Adiós, caminante.", region: "Granada // España", image: "/lang/es.jpg" },
-  { code: "hi", label: "हिन्दी", native: "हिन्दी", greeting: "अलविदा, राही।", region: "Agra // भारत", image: "/lang/hi.jpg" },
+  {
+    code: "en",
+    label: "English",
+    native: "English",
+    greeting: "Farewell, wanderer.",
+    region: "London // United Kingdom",
+    image: "/lang/en.jpg",
+    wordmark: ["V", "A", "I", "S", "H"],
+    wordmarkFont: LATIN_WORDMARK_FONT,
+  },
+  {
+    code: "fr",
+    label: "Français",
+    native: "Français",
+    greeting: "Au revoir, voyageur.",
+    region: "Paris // France",
+    image: "/lang/fr.jpg",
+    /* Diacritic-flavoured Latin :: same letters, French marks. Reads
+       as the same brand but unmistakably French at first glance. */
+    wordmark: ["V", "Â", "Ï", "Ŝ", "H"],
+    wordmarkFont: LATIN_WORDMARK_FONT,
+  },
+  {
+    code: "ja",
+    label: "日本語",
+    native: "日本語",
+    greeting: "さようなら、旅人。",
+    region: "Fuji // Japan",
+    image: "/lang/ja.jpg",
+    /* Katakana transliteration of "VAISH" :: ヴ-ァ-イ-シ-ュ. Five
+       independent glyphs so the morph still feels per-letter. */
+    wordmark: ["ヴ", "ァ", "イ", "シ", "ュ"],
+    wordmarkFont: CJK_WORDMARK_FONT,
+  },
+  {
+    code: "es",
+    label: "Español",
+    native: "Español",
+    greeting: "Adiós, caminante.",
+    region: "Granada // España",
+    image: "/lang/es.jpg",
+    /* Spanish keeps Latin but tilts the I -> Í to give a tilde-cue. */
+    wordmark: ["V", "A", "Í", "S", "H"],
+    wordmarkFont: LATIN_WORDMARK_FONT,
+  },
+  {
+    code: "hi",
+    label: "हिन्दी",
+    native: "हिन्दी",
+    greeting: "अलविदा, राही।",
+    region: "Agra // भारत",
+    image: "/lang/hi.jpg",
+    /* Devanagari rendering of "VAISH" :: व-ै-श-् (combining marks
+       handled inline). We keep it 5 glyph slots — व, ै, श, ्, ह — so
+       the per-letter stagger still maps. */
+    wordmark: ["व", "ै", "श", "्", "ह"],
+    wordmarkFont: DEVANAGARI_WORDMARK_FONT,
+  },
 ]
 
 type Dict = Record<string, string>
