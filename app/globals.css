@@ -288,6 +288,13 @@
      fallback for LetterTilt so the wordmark still feels alive on
      phones (where pointermove tilt obviously can't fire). */
   @keyframes letter-wave { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-2px) } }
+  /* Particle field :: replicates the framer-motion values
+     `y: [0, -28, 0]` and `opacity: [0, 0.85, 0]` exactly. The
+     generic `drift-y` and `star-twinkle` loops nearby are tuned for
+     different elements (-8px drift, 0.15 min opacity) and don't
+     match the particle look, so this gets dedicated keyframes. */
+  @keyframes particle-drift { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-28px) } }
+  @keyframes particle-twinkle { 0%,100% { opacity: 0 } 50% { opacity: 0.85 } }
 
   .animate-marquee-x { animation: marquee-x 42s linear infinite; }
   .animate-marquee-x-rev { animation: marquee-x-rev 38s linear infinite; }
@@ -299,6 +306,8 @@
   .animate-flicker { animation: flicker 6s linear infinite; }
   .animate-star-twinkle { animation: star-twinkle var(--star-dur, 6s) ease-in-out infinite; animation-delay: var(--star-delay, 0s); }
   .animate-letter-wave { animation: letter-wave var(--letter-dur, 3.6s) ease-in-out infinite; animation-delay: var(--letter-delay, 0s); }
+  .animate-particle-drift { animation: particle-drift var(--particle-dur, 8s) ease-in-out infinite; animation-delay: var(--particle-delay, 0s); }
+  .animate-particle-twinkle { animation: particle-twinkle var(--particle-dur, 8s) ease-in-out infinite; animation-delay: var(--particle-delay, 0s); }
 
   .scanlines {
     background-image: repeating-linear-gradient(
@@ -311,7 +320,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .animate-marquee-x, .animate-marquee-x-rev, .animate-pulse-soft, .animate-rotate-slow, .animate-drift-y, .animate-sweep, .animate-loader-tick, .animate-flicker, .animate-star-twinkle, .animate-letter-wave {
+    .animate-marquee-x, .animate-marquee-x-rev, .animate-pulse-soft, .animate-rotate-slow, .animate-drift-y, .animate-sweep, .animate-loader-tick, .animate-flicker, .animate-star-twinkle, .animate-letter-wave, .animate-particle-drift, .animate-particle-twinkle {
       animation: none !important;
     }
   }

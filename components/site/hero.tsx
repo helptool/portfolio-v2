@@ -137,33 +137,33 @@ function ParticleField({ count = 16 }: { count?: number }) {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
       {particles.map((p) => (
-        /* Two animations stacked on the same element :: opacity twinkle
-           (from the shared `star-twinkle` keyframe) + a vertical drift
-           wrapper (`drift-y` on the outer span). The old framer
-           implementation animated `y: [0, -28, 0]` and `opacity: [0,
-           0.85, 0]` simultaneously; we replicate that with a wrapper +
-           inner span so each property uses its own GPU-only keyframe
-           and stays composited. */
+        /* Two dedicated keyframes stacked on a wrapper + inner span,
+           replicating the old framer values exactly :: outer span runs
+           `particle-drift` (translateY 0 -> -28px -> 0) and inner span
+           runs `particle-twinkle` (opacity 0 -> 0.85 -> 0). Both are
+           composited so there's no JS-side ticking. The generic
+           `drift-y` / `star-twinkle` keyframes nearby are tuned for
+           different elements and don't match these particles. */
         <span
           key={p.id}
-          className="absolute animate-drift-y"
+          className="absolute animate-particle-drift"
           style={
             {
               left: p.left,
               top: p.top,
               width: p.size,
               height: p.size,
-              animationDuration: `${p.dur}s`,
-              animationDelay: `${p.delay}s`,
+              "--particle-dur": `${p.dur}s`,
+              "--particle-delay": `${p.delay}s`,
             } as React.CSSProperties
           }
         >
           <span
-            className="block h-full w-full rounded-full bg-primary/55 animate-star-twinkle"
+            className="block h-full w-full rounded-full bg-primary/55 animate-particle-twinkle"
             style={
               {
-                "--star-dur": `${p.dur}s`,
-                "--star-delay": `${p.delay}s`,
+                "--particle-dur": `${p.dur}s`,
+                "--particle-delay": `${p.delay}s`,
               } as React.CSSProperties
             }
           />
