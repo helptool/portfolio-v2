@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import dynamic from "next/dynamic"
 import { Nav } from "@/components/site/nav"
 import { Hero } from "@/components/site/hero"
@@ -23,6 +24,71 @@ import { LiveStatus } from "@/components/site/live-status"
 const MiniGame = dynamic(() => import("@/components/site/minigame").then((m) => ({ default: m.MiniGame })), {
   loading: () => <div className="min-h-[600px]" aria-hidden />,
 })
+
+/* Per-section share variants. When someone shares the URL with a
+   `?section=<id>` query string, social cards render the matching OG image
+   (pre-rendered into /public via scripts/gen-og.mjs). The hash is purely
+   the in-page scroll target; query params are what crawlers read.
+
+   We keep the title + description aligned with each variant so the unfurl
+   in Twitter / Slack / iMessage is fully bespoke per section, not just the
+   image. Default (no `?section=`) falls through to the layout's metadata. */
+const SECTION_META: Record<
+  string,
+  { title: string; description: string; image: string }
+> = {
+  realms: {
+    title: "Realms — VAISH",
+    description: "Five forgotten kingdoms, each with its own weather, time, and tongue.",
+    image: "/og-realms.png",
+  },
+  manifesto: {
+    title: "Manifesto — VAISH",
+    description: "Not a portfolio. A place that remembers you stepped in.",
+    image: "/og-manifesto.png",
+  },
+  classes: {
+    title: "Classes — VAISH",
+    description: "The kits I bring — design, motion, code, narrative.",
+    image: "/og-classes.png",
+  },
+  chronicle: {
+    title: "Chronicle — VAISH",
+    description: "A long memory of work — entries you can scroll end to end.",
+    image: "/og-chronicle.png",
+  },
+  arcade: {
+    title: "Arcade — VAISH",
+    description: "Seven small games and a leaderboard that remembers you played.",
+    image: "/og-arcade.png",
+  },
+}
+
+type PageProps = {
+  searchParams?: Promise<{ section?: string }>
+}
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const sp = (await searchParams) ?? {}
+  const key = (sp.section ?? "").toLowerCase()
+  const v = SECTION_META[key]
+  if (!v) return {}
+  return {
+    title: v.title,
+    description: v.description,
+    openGraph: {
+      title: v.title,
+      description: v.description,
+      images: [{ url: v.image, width: 1200, height: 630, alt: v.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: v.title,
+      description: v.description,
+      images: [v.image],
+    },
+  }
+}
 
 /**
  * Page composition

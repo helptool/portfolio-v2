@@ -9,6 +9,7 @@ import { SoundToggle } from "@/components/site/sound-toggle"
 import { KonamiSecret } from "@/components/site/konami"
 import { RunesProvider } from "@/components/site/runes-context"
 import { EchoVault } from "@/components/site/echo-vault"
+import { KeyboardShortcuts } from "@/components/site/keyboard-shortcuts"
 
 const SITE_URL = "https://portfolio-v2.paidtoolsdrive.workers.dev"
 
@@ -154,6 +155,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <SoundToggle />
               <KonamiSecret />
               <EchoVault />
+              {/* `?` opens a keyboard-shortcut overlay; `M` toggles
+                  ambient sound. Listener is global; modal is render-on-
+                  demand so the DOM stays clean until invoked. */}
+              <KeyboardShortcuts />
             </RunesProvider>
           </SoundProvider>
         </I18nProvider>
