@@ -81,10 +81,20 @@ void main() {
   // mouse data is missing (we encode "no mouse" as u_mouse.x < 0).
   float mx = u_mouse.x < 0.0 ? 0.5 : u_mouse.x;
   float dx = abs(v_uv.x - mx);
-  float glow = (1.0 - smoothstep(0.0, 0.18, dx)) * 0.55;
+  float glow = (1.0 - smoothstep(0.0, 0.18, dx)) * 0.4;
 
-  // Final ribbon brightness.
-  float ribbon = (band * (0.55 + n * 0.45) + glow * band) * u_intensity;
+  // Centre window mask :: the divider's label + sigil sit at the
+  // horizontal midpoint. We hollow the band's brightness across the
+  // central 36% of width so the type behind it stays readable. The
+  // band is still painted there (just dimmer), so the noise still
+  // reads as a continuous river — it just doesn't fight the words.
+  float centreDist = abs(v_uv.x - 0.5);
+  float centreCutout = smoothstep(0.10, 0.22, centreDist);
+
+  // Final ribbon brightness :: dimmed globally (was 0.55+0.45*n, now
+  // 0.32+0.32*n) so the band is a presence rather than a feature.
+  float ribbon = (band * (0.32 + n * 0.32) + glow * band * centreCutout) * u_intensity;
+  ribbon *= mix(0.18, 1.0, centreCutout); // fade the band itself in the centre
 
   // Copper ember palette :: same hue family as the rest of the realm.
   vec3 base   = vec3(0.043, 0.024, 0.024); // background tint that won't fight the page bg
@@ -112,6 +122,7 @@ export function DividerFluid({ className, intensity = 1 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const reduced = useReducedMotion()
   const [enabled, setEnabled] = useState(false)
+  const [nearViewport, setNearViewport] = useState(false)
   const intensityRef = useRef(intensity)
   intensityRef.current = intensity
 
@@ -128,8 +139,39 @@ export function DividerFluid({ className, intensity = 1 }: Props) {
     return () => mql.removeEventListener("change", update)
   }, [])
 
+  /* Lazy-mount gate :: the page has 7 RuneDividers, each owning a
+     DividerFluid. Allocating 7 WebGL contexts at first paint costs
+     real time on lower-end laptops and contributes to the choppy
+     feel during initial scroll. We gate the GL useEffect on a
+     separate IntersectionObserver with a generous rootMargin (400px)
+     so each divider's context is created only just before it scrolls
+     into view, but not so late that the first frame ships an empty
+     band. Once `nearViewport` flips true we never flip it back —
+     reusing the GL context across re-intersections via the existing
+     rAF-pause IO is cheaper than creating + destroying. */
   useEffect(() => {
     if (!enabled) return
+    if (typeof window === "undefined") return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setNearViewport(true)
+            io.disconnect()
+            return
+          }
+        }
+      },
+      { rootMargin: "400px" },
+    )
+    io.observe(canvas)
+    return () => io.disconnect()
+  }, [enabled])
+
+  useEffect(() => {
+    if (!enabled || !nearViewport) return
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -138,7 +180,11 @@ export function DividerFluid({ className, intensity = 1 }: Props) {
 
     const vs = compileShader(gl, gl.VERTEX_SHADER, VERT)
     const fs = compileShader(gl, gl.FRAGMENT_SHADER, FRAG)
-    if (!vs || !fs) return
+    if (!vs || !fs) {
+      if (vs) gl.deleteShader(vs)
+      if (fs) gl.deleteShader(fs)
+      return
+    }
     const program = gl.createProgram()
     if (!program) {
       gl.deleteShader(vs)

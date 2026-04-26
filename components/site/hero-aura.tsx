@@ -198,7 +198,15 @@ export function HeroAura({ className }: Props) {
 
     const vs = compileShader(gl, gl.VERTEX_SHADER, VERT)
     const fs = compileShader(gl, gl.FRAGMENT_SHADER, FRAG)
-    if (!vs || !fs) return
+    if (!vs || !fs) {
+      // If only one shader compiled, free the other so we don't leak
+      // a WebGL shader object across the early return. compileShader
+      // already deletes the failing one internally on its own error
+      // path, so we only need to release the surviving handle here.
+      if (vs) gl.deleteShader(vs)
+      if (fs) gl.deleteShader(fs)
+      return
+    }
     const program = gl.createProgram()
     if (!program) {
       gl.deleteShader(vs)

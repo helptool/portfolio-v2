@@ -150,9 +150,15 @@ function PortraitPlate() {
             sizes="(max-width: 1024px) 80vw, 40vw"
             className="absolute inset-0"
             style={{ objectFit: "cover" }}
-            baseWarp={0.018}
-            hoverWarp={0.028}
-            chromaticAberration={0.008}
+            baseWarp={0.022}
+            hoverWarp={0}
+            chromaticAberration={0.005}
+            // Idle = soft warp + RGB split paints the whole portrait.
+            // Hovering animates both toward 0 over ~0.5s so the visitor
+            // can "see through" the shader by holding the cursor over
+            // the photo. Reads as a deliberate gesture rather than the
+            // shader being broken.
+            clearOnHover
           />
         </motion.div>
 

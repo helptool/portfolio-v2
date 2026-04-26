@@ -15,9 +15,12 @@ export type LanguageMeta = {
   /* Wordmark glyphs :: the brand reads "VAISH" but each locale gets a
      5-glyph rendering in its own script. The hero swaps between these
      during language change so visitors who switch tongues see the mark
-     re-render in their writing system. Always exactly 5 glyphs to
-     preserve the lockup rhythm. */
-  wordmark: [string, string, string, string, string]
+     re-render in their writing system. Length varies per script —
+     Latin/CJK use 5 glyph slots; Devanagari uses 2 because "वैश" is
+     two aksharas and there is no honest way to expand a 3-codepoint
+     Hindi word into five visually-meaningful slots. The hero adapts
+     its left/mid/right split to whatever length is provided. */
+  wordmark: string[]
   /* Font stack used when rendering the wordmark for this locale. The
      Latin scripts use the variable Bodoni Moda; CJK and Devanagari fall
      back to Noto serif fonts so the engraved character of the lockup
@@ -87,14 +90,16 @@ export const LANGUAGES: LanguageMeta[] = [
     greeting: "अलविदा, राही।",
     region: "Agra // भारत",
     image: "/lang/hi.jpg",
-    /* Devanagari rendering of "VAISH" :: phonetic V-AA-I-SH-H spelt as
-       five complete aksharas (standalone graphemes). Earlier draft used
-       combining marks (ै, ्) in their own slots which browsers render
-       with dotted-circle placeholders since combining marks need a base
-       consonant in the same cluster. Mapping each Latin letter to its
-       closest Hindi consonant / vowel preserves the 5-slot rhythm and
-       reads cleanly: व (va), आ (aa), इ (i), श (sha), ह (ha). */
-    wordmark: ["व", "आ", "इ", "श", "ह"],
+    /* Hindi for "Vaish" is वैश — two aksharas: वै (व + combining ै) and
+       श. Honest spelling, even though it breaks the 5-slot rhythm the
+       Latin / CJK locales use. The previous draft tried a phonetic
+       5-slot expansion (व आ इ श ह = "va-aa-i-sha-ha") which is nonsense
+       in Hindi: it reads as the syllables, not the brand. Combining
+       marks (ै, ्) cannot be standalone slots — browsers render them
+       with dotted-circle placeholders — so the only correct option is
+       to keep them inside their parent akshara. The hero's split logic
+       adapts to whatever length wordmark.length carries. */
+    wordmark: ["वै", "श"],
     wordmarkFont: DEVANAGARI_WORDMARK_FONT,
   },
 ]

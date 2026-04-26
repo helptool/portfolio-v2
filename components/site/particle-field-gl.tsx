@@ -121,9 +121,17 @@ export function ParticleFieldGL({
     /* ----- shader program ----- */
     const vs = compileShader(gl, gl.VERTEX_SHADER, VERT)
     const fs = compileShader(gl, gl.FRAGMENT_SHADER, FRAG)
-    if (!vs || !fs) return
+    if (!vs || !fs) {
+      if (vs) gl.deleteShader(vs)
+      if (fs) gl.deleteShader(fs)
+      return
+    }
     const program = gl.createProgram()
-    if (!program) return
+    if (!program) {
+      gl.deleteShader(vs)
+      gl.deleteShader(fs)
+      return
+    }
     gl.attachShader(program, vs)
     gl.attachShader(program, fs)
     gl.linkProgram(program)

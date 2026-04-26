@@ -925,9 +925,18 @@ export function Hero() {
         >
           <span className="flex items-baseline">
             {meta.wordmark.map((l, i) => {
-              const isLeft = i < 2
-              const isMid = i === 2
-              const isRight = i > 2
+              /* Split logic adapts to wordmark.length so the morph
+                 stays meaningful for locales like Hindi that only
+                 honestly support 2 aksharas. For an even-length
+                 wordmark there is no middle glyph; left = first half,
+                 right = second half. For odd-length there's a single
+                 mid glyph that scales rather than splits. */
+              const len = meta.wordmark.length
+              const halfFloor = Math.floor(len / 2)
+              const halfCeil = Math.ceil(len / 2)
+              const isMid = len % 2 === 1 && i === halfFloor
+              const isLeft = !isMid && i < halfCeil
+              const isRight = !isMid && i >= halfCeil
               /* Per-locale kern :: Bodoni's V/A pair has aggressive
                  negative kern that other scripts don't need. Katakana
                  and Devanagari render with their own optical spacing,

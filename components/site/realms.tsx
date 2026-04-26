@@ -246,17 +246,45 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
             <span className="font-hud text-foreground/55">{t(realm.kindKey)}</span>
           </div>
 
+          {/* Split per-word, then per-letter inside each word. The
+              outer word wrapper carries `whiteSpace: nowrap` so the
+              line-break engine can never split a word like "Wylds"
+              across two lines. Real space text nodes between word
+              wrappers keep the natural break opportunities — without
+              this the browser would break between characters because
+              each per-letter span is inline-block, producing the
+              orphan "s" on the next line that motivated this fix. */}
           <h3 className="display-lg mt-5 text-[clamp(54px,9vw,140px)]">
-            {realm.name.split("").map((c, i) => (
-              <span key={i} className="inline-block overflow-hidden align-baseline [line-height:0.92]">
-                <motion.span
-                  initial={{ y: "115%" }}
-                  animate={{ y: isActive ? "0%" : "115%" }}
-                  transition={{ duration: 0.9, delay: i * 0.03, ease: [0.22, 1, 0.36, 1] }}
-                  className="inline-block will-change-transform"
-                >
-                  {c === " " ? "\u00A0" : c}
-                </motion.span>
+            {realm.name.split(" ").map((word, wi, words) => (
+              <span key={wi} className="inline-block whitespace-nowrap">
+                {word.split("").map((c, i) => {
+                  // Stagger across the whole title regardless of word
+                  // index so the reveal reads as one continuous wave.
+                  const offset =
+                    words
+                      .slice(0, wi)
+                      .reduce((sum, w) => sum + w.length + 1, 0) + i
+                  return (
+                    <span
+                      key={i}
+                      className="inline-block overflow-hidden align-baseline [line-height:0.92]"
+                    >
+                      <motion.span
+                        initial={{ y: "115%" }}
+                        animate={{ y: isActive ? "0%" : "115%" }}
+                        transition={{
+                          duration: 0.9,
+                          delay: offset * 0.03,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="inline-block will-change-transform"
+                      >
+                        {c}
+                      </motion.span>
+                    </span>
+                  )
+                })}
+                {wi < words.length - 1 && " "}
               </span>
             ))}
           </h3>
