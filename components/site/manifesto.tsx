@@ -150,14 +150,26 @@ function PortraitPlate() {
             sizes="(max-width: 1024px) 80vw, 40vw"
             className="absolute inset-0"
             style={{ objectFit: "cover" }}
-            baseWarp={0.018}
-            hoverWarp={0.028}
-            chromaticAberration={0.008}
+            baseWarp={0.022}
+            hoverWarp={0}
+            chromaticAberration={0.005}
+            // Idle = soft warp + RGB split paints the whole portrait.
+            // Hovering animates both toward 0 over ~0.5s so the visitor
+            // can "see through" the shader by holding the cursor over
+            // the photo. Reads as a deliberate gesture rather than the
+            // shader being broken.
+            clearOnHover
           />
         </motion.div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/10 to-background/30 mix-blend-multiply" />
-        <div className="absolute inset-0 mix-blend-soft-light bg-gradient-to-br from-primary/15 via-transparent to-transparent" />
+        {/* Decorative gradient overlays sit ON TOP of the ShaderImage
+            canvas. Without `pointer-events-none` they eat every mouse
+            event before it reaches the canvas, which is what was
+            preventing the clearOnHover behaviour from firing — the
+            ShaderImage's pointermove handler never received an event,
+            so warp/aberration stayed at their idle full values. */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/80 via-background/10 to-background/30 mix-blend-multiply" />
+        <div className="pointer-events-none absolute inset-0 mix-blend-soft-light bg-gradient-to-br from-primary/15 via-transparent to-transparent" />
 
         <motion.span
           aria-hidden
@@ -182,10 +194,10 @@ function PortraitPlate() {
         <div className="absolute left-4 bottom-4 right-4 flex items-end justify-between font-hud text-foreground/85">
           <div>
             <div className="text-foreground">{brand.creator}</div>
-            <div className="text-foreground/55">{t("op.role")}</div>
+            <div className="text-foreground/70">{t("op.role")}</div>
           </div>
           <div className="text-right">
-            <div className="text-foreground/55">{t("op.basedIn")}</div>
+            <div className="text-foreground/70">{t("op.basedIn")}</div>
             <div className="text-foreground">{t("brand.location")}</div>
           </div>
         </div>
@@ -325,7 +337,7 @@ export function Manifesto() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.9, ease: easeOut }}
-            className="flex items-center gap-3 font-hud text-foreground/55"
+            className="flex items-center gap-3 font-hud text-foreground/70"
           >
             <span className="inline-block h-px w-10 bg-foreground/30" />
             <span>{t("op.kicker")}</span>
@@ -335,7 +347,7 @@ export function Manifesto() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.9, delay: 0.1, ease: easeOut }}
-            className="hidden items-center gap-3 font-hud text-foreground/55 sm:flex"
+            className="hidden items-center gap-3 font-hud text-foreground/70 sm:flex"
           >
             <span>{t("op.frame")}</span>
             <span className="inline-block h-1.5 w-1.5 animate-pulse-soft rounded-full bg-primary" />
@@ -405,19 +417,19 @@ export function Manifesto() {
                 <div className="font-wordmark-tight text-3xl font-semibold text-foreground">
                   <Counter to={6} suffix="+" />
                 </div>
-                <div className="mt-1 font-hud text-foreground/55">{t("op.stat1")}</div>
+                <div className="mt-1 font-hud text-foreground/70">{t("op.stat1")}</div>
               </div>
               <div>
                 <div className="font-wordmark-tight text-3xl font-semibold text-foreground">
                   <Counter to={48} />
                 </div>
-                <div className="mt-1 font-hud text-foreground/55">{t("op.stat2")}</div>
+                <div className="mt-1 font-hud text-foreground/70">{t("op.stat2")}</div>
               </div>
               <div>
                 <div className="font-wordmark-tight text-3xl font-semibold text-foreground">
                   <Counter to={12} />
                 </div>
-                <div className="mt-1 font-hud text-foreground/55">{t("op.stat3")}</div>
+                <div className="mt-1 font-hud text-foreground/70">{t("op.stat3")}</div>
               </div>
             </div>
           </div>
@@ -475,7 +487,7 @@ export function Manifesto() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.9, ease: easeOut }}
-            className="mt-14 grid grid-cols-2 gap-6 border-t border-foreground/10 pt-6 font-hud text-foreground/55 sm:grid-cols-4"
+            className="mt-14 grid grid-cols-2 gap-6 border-t border-foreground/10 pt-6 font-hud text-foreground/70 sm:grid-cols-4"
           >
             <div>
               <div className="text-foreground/45">{t("op.row.now")}</div>

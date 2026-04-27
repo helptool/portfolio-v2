@@ -295,7 +295,7 @@ export function SigilForgeGame() {
                       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                       className={cn(
                         "absolute inset-0 flex items-center justify-center",
-                        isLit ? "text-primary" : "text-foreground/55",
+                        isLit ? "text-primary" : "text-foreground/70",
                       )}
                     >
                       <RuneMark id={runeIds[r][c]} className="h-[45%] w-[45%]" />
@@ -318,7 +318,7 @@ export function SigilForgeGame() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between font-hud text-foreground/55">
+      <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between font-hud text-foreground/70">
         <span>Best // {String(best).padStart(3, "0")}</span>
         <span className="hidden sm:inline">Tap a rune to flip it and its neighbors</span>
         <span>Moves // {String(moves).padStart(2, "0")}/{String(optimal).padStart(2, "0")}</span>
@@ -339,7 +339,7 @@ export function SigilForgeGame() {
               transition={{ duration: 0.7, delay: 0.1 }}
               className="text-center px-6"
             >
-              <div className="font-hud text-foreground/55 mb-3">
+              <div className="font-hud text-foreground/70 mb-3">
                 {phase === "ended" ? "Forge Complete" : "Toggle Trial"}
               </div>
               <div className="font-wordmark-tight font-semibold text-5xl sm:text-6xl">

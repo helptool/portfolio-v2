@@ -116,7 +116,7 @@ export function KonamiSecret() {
               The realm acknowledges. You've now unlocked the developer's badge —
               it lives quietly at the foot of the page from here on out.
             </p>
-            <div className="mt-6 grid grid-cols-2 gap-3 font-mono text-[11px] text-foreground/55">
+            <div className="mt-6 grid grid-cols-2 gap-3 font-mono text-[11px] text-foreground/70">
               <div>
                 <div className="text-primary/75">// build</div>
                 Next 16 / Workers

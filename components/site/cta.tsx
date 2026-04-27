@@ -45,7 +45,7 @@ export function FinalCTA() {
       <div className="relative z-10 mx-auto max-w-[1600px] px-5 md:px-10">
         <div className="flex items-center gap-3">
           <span className="block h-px w-8 bg-foreground/30" />
-          <span className="font-hud text-foreground/55">{t("contact.code")}</span>
+          <span className="font-hud text-foreground/70">{t("contact.code")}</span>
         </div>
 
         <div className="mt-10 grid grid-cols-12 items-start gap-6 md:gap-10">
@@ -75,7 +75,7 @@ export function FinalCTA() {
           <div className="col-span-12 md:col-span-4">
             <div className="relative flex flex-col gap-6">
               <ContactArtifact />
-              <div className="font-hud text-foreground/55">
+              <div className="font-hud text-foreground/70">
                 <div className="flex items-center justify-between border-b border-foreground/10 py-3">
                   <span>{t("contact.status")}</span>
                   <span className="flex items-center gap-2 text-foreground">
@@ -123,7 +123,7 @@ export function FinalCTA() {
           className="relative mt-20 flex max-w-[820px] flex-col items-stretch gap-3 border-b border-foreground/15 pb-5 md:flex-row md:items-end md:gap-6"
         >
           <div className="flex flex-1 flex-col gap-3">
-            <label htmlFor="signal" className="font-hud text-foreground/55">
+            <label htmlFor="signal" className="font-hud text-foreground/70">
               {t("contact.signal")}
             </label>
             <input
@@ -191,7 +191,7 @@ export function FinalCTA() {
           </Magnetic>
         </motion.form>
 
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 font-hud text-foreground/55">
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 font-hud text-foreground/70">
           <a
             href="mailto:hello@vaish.studio"
             data-cursor="hover"
@@ -423,7 +423,7 @@ function ContactArtifact() {
         {/* Inner geometric sigil */}
         <svg
           viewBox="0 0 200 200"
-          className="absolute inset-0 h-full w-full text-foreground/55"
+          className="absolute inset-0 h-full w-full text-foreground/70"
         >
           <g style={{ transformOrigin: "100px 100px" }} className="animate-rotate-slow" >
             <polygon

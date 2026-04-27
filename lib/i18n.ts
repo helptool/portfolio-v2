@@ -12,14 +12,96 @@ export type LanguageMeta = {
   greeting: string
   region: string
   image: string
+  /* Wordmark glyphs :: the brand reads "VAISH" but each locale gets a
+     5-glyph rendering in its own script. The hero swaps between these
+     during language change so visitors who switch tongues see the mark
+     re-render in their writing system. Length varies per script —
+     Latin/CJK use 5 glyph slots; Devanagari uses 2 because "वैश" is
+     two aksharas and there is no honest way to expand a 3-codepoint
+     Hindi word into five visually-meaningful slots. The hero adapts
+     its left/mid/right split to whatever length is provided. */
+  wordmark: string[]
+  /* Font stack used when rendering the wordmark for this locale. The
+     Latin scripts use the variable Bodoni Moda; CJK and Devanagari fall
+     back to Noto serif fonts so the engraved character of the lockup
+     survives outside the Latin-only foundry. */
+  wordmarkFont: string
 }
 
+/* Font stacks reference the CSS variables that next/font/google sets up
+   in app/layout.tsx. Each `Noto_Serif_*({ variable: "--font-wordmark-*" })`
+   call registers under a Next-generated family name (e.g. `__Noto_Serif_JP_abc`)
+   and exposes it via the variable — using the literal "Noto Serif JP"
+   string would never resolve to the loaded font. */
+const LATIN_WORDMARK_FONT = "var(--font-wordmark), Didot, 'Cormorant Garamond', Georgia, serif"
+const CJK_WORDMARK_FONT = "var(--font-wordmark-jp), 'Hiragino Mincho ProN', 'Yu Mincho', serif"
+const DEVANAGARI_WORDMARK_FONT = "var(--font-wordmark-deva), 'Tiro Devanagari Hindi', serif"
+
 export const LANGUAGES: LanguageMeta[] = [
-  { code: "en", label: "English", native: "English", greeting: "Farewell, wanderer.", region: "London // United Kingdom", image: "/lang/en.jpg" },
-  { code: "fr", label: "Français", native: "Français", greeting: "Au revoir, voyageur.", region: "Paris // France", image: "/lang/fr.jpg" },
-  { code: "ja", label: "日本語", native: "日本語", greeting: "さようなら、旅人。", region: "Fuji // Japan", image: "/lang/ja.jpg" },
-  { code: "es", label: "Español", native: "Español", greeting: "Adiós, caminante.", region: "Granada // España", image: "/lang/es.jpg" },
-  { code: "hi", label: "हिन्दी", native: "हिन्दी", greeting: "अलविदा, राही।", region: "Agra // भारत", image: "/lang/hi.jpg" },
+  {
+    code: "en",
+    label: "English",
+    native: "English",
+    greeting: "Farewell, wanderer.",
+    region: "London // United Kingdom",
+    image: "/lang/en.jpg",
+    wordmark: ["V", "A", "I", "S", "H"],
+    wordmarkFont: LATIN_WORDMARK_FONT,
+  },
+  {
+    code: "fr",
+    label: "Français",
+    native: "Français",
+    greeting: "Au revoir, voyageur.",
+    region: "Paris // France",
+    image: "/lang/fr.jpg",
+    /* Diacritic-flavoured Latin :: same letters, French marks. Reads
+       as the same brand but unmistakably French at first glance. */
+    wordmark: ["V", "Â", "Ï", "Ŝ", "H"],
+    wordmarkFont: LATIN_WORDMARK_FONT,
+  },
+  {
+    code: "ja",
+    label: "日本語",
+    native: "日本語",
+    greeting: "さようなら、旅人。",
+    region: "Fuji // Japan",
+    image: "/lang/ja.jpg",
+    /* Katakana transliteration of "VAISH" :: ヴ-ァ-イ-シ-ュ. Five
+       independent glyphs so the morph still feels per-letter. */
+    wordmark: ["ヴ", "ァ", "イ", "シ", "ュ"],
+    wordmarkFont: CJK_WORDMARK_FONT,
+  },
+  {
+    code: "es",
+    label: "Español",
+    native: "Español",
+    greeting: "Adiós, caminante.",
+    region: "Granada // España",
+    image: "/lang/es.jpg",
+    /* Spanish keeps Latin but tilts the I -> Í to give a tilde-cue. */
+    wordmark: ["V", "A", "Í", "S", "H"],
+    wordmarkFont: LATIN_WORDMARK_FONT,
+  },
+  {
+    code: "hi",
+    label: "हिन्दी",
+    native: "हिन्दी",
+    greeting: "अलविदा, राही।",
+    region: "Agra // भारत",
+    image: "/lang/hi.jpg",
+    /* Hindi for "Vaish" is वैश — two aksharas: वै (व + combining ै) and
+       श. Honest spelling, even though it breaks the 5-slot rhythm the
+       Latin / CJK locales use. The previous draft tried a phonetic
+       5-slot expansion (व आ इ श ह = "va-aa-i-sha-ha") which is nonsense
+       in Hindi: it reads as the syllables, not the brand. Combining
+       marks (ै, ्) cannot be standalone slots — browsers render them
+       with dotted-circle placeholders — so the only correct option is
+       to keep them inside their parent akshara. The hero's split logic
+       adapts to whatever length wordmark.length carries. */
+    wordmark: ["वै", "श"],
+    wordmarkFont: DEVANAGARI_WORDMARK_FONT,
+  },
 ]
 
 type Dict = Record<string, string>
@@ -197,6 +279,10 @@ const en: Dict = {
   "op.pillar2Body": "Next.js, React, WebGL. Accessible, fast, kind on mobile. The repository you inherit is built to the same standard as the surface you saw.",
   "op.pillar3Title": "Motion",
   "op.pillar3Body": "Scroll-scored cinema, magnetic micro-interactions, custom cursors that think. Every animation has a reason to exist and a moment where it gets out of the way.",
+  "op.principle1": "Restraint is the loudest gesture.",
+  "op.principle2": "The map is never the realm.",
+  "op.principle3": "Detail is patience made visible.",
+  "op.principle4": "Every page begins as weather.",
   "op.plate1": "Studio // Bengaluru",
   "op.plate2": "Notebook // Sigil drafts",
   "op.stat1": "Years in the field",
@@ -548,6 +634,10 @@ const fr: Dict = {
   "op.pillar2Body": "Next.js, React, WebGL. Accessible, rapide, attentif au mobile. Le dépôt que vous héritez est construit avec la même exigence que la surface que vous avez vue.",
   "op.pillar3Title": "Mouvement",
   "op.pillar3Body": "Cinéma au défilement, micro-interactions magnétiques, curseurs qui pensent. Chaque animation a une raison d'exister et un instant où elle s'efface.",
+  "op.principle1": "La retenue est le plus fort des gestes.",
+  "op.principle2": "La carte n'est jamais le royaume.",
+  "op.principle3": "Le détail, c'est la patience rendue visible.",
+  "op.principle4": "Chaque page commence comme une météo.",
   "op.plate1": "Studio // Bengaluru",
   "op.plate2": "Carnet // Esquisses de sceaux",
   "op.stat1": "Années sur le terrain",
@@ -864,6 +954,10 @@ const ja: Dict = {
   "op.pillar2Body": "Next.js、React、WebGL。アクセシブルで、速く、モバイルに優しい。受け継ぐリポジトリは、見える表面と同じ基準で組まれる。",
   "op.pillar3Title": "モーション",
   "op.pillar3Body": "スクロールに合わせた映画、磁力ある微細操作、思考する独自のカーソル。すべての動きに存在の理由と、退く瞬間がある。",
+  "op.principle1": "控えめは、最も大きな所作。",
+  "op.principle2": "地図は、決して領界ではない。",
+  "op.principle3": "細部は、目に見える忍耐。",
+  "op.principle4": "どの頁も、天候として始まる。",
   "op.plate1": "工房 // ベンガルール",
   "op.plate2": "ノート // 印章の下書き",
   "op.stat1": "現場での年数",
@@ -1179,6 +1273,10 @@ const es: Dict = {
   "op.pillar2Body": "Next.js, React, WebGL. Accesible, rápido, amable con el móvil. El repositorio que heredas se construye con el mismo estándar que la superficie que viste.",
   "op.pillar3Title": "Movimiento",
   "op.pillar3Body": "Cine guiado por el scroll, microinteracciones magnéticas, cursores que piensan. Cada animación tiene una razón de existir y un momento en que se aparta.",
+  "op.principle1": "La contención es el gesto más alto.",
+  "op.principle2": "El mapa nunca es el reino.",
+  "op.principle3": "El detalle es paciencia hecha visible.",
+  "op.principle4": "Toda página empieza como clima.",
   "op.plate1": "Estudio // Bengaluru",
   "op.plate2": "Cuaderno // Bocetos de sigilos",
   "op.stat1": "Años en el oficio",
@@ -1495,6 +1593,10 @@ const hi: Dict = {
   "op.pillar2Body": "Next.js, React, WebGL। सुलभ, द्रुत, मोबाइल पर विनम्र। जो रिपॉज़िटरी आप पाते हैं, वह उसी स्तर पर रची जाती है जैसी सतह आपने देखी।",
   "op.pillar3Title": "गति",
   "op.pillar3Body": "स्क्रॉल-आधारित सिनेमा, चुम्बकीय सूक्ष्म अनुभव, सोचने वाले कर्सर। हर एनिमेशन का कारण है, और हटने का क्षण भी।",
+  "op.principle1": "संयम ही सबसे ऊँची भाव-भंगिमा है।",
+  "op.principle2": "नक़्शा कभी राज्य नहीं होता।",
+  "op.principle3": "विवरण, धैर्य का प्रकट रूप है।",
+  "op.principle4": "हर पृष्ठ मौसम की तरह आरम्भ होता है।",
   "op.plate1": "स्टूडियो // बेंगलुरु",
   "op.plate2": "नोटबुक // मुद्राओं के मसौदे",
   "op.stat1": "क्षेत्र में वर्ष",

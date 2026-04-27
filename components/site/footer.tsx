@@ -242,7 +242,18 @@ export function Footer() {
                 </AnimatePresence>
               </div>
 
-              <ul className="flex flex-wrap gap-1.5">
+              {/* The list itself is a labelled radiogroup so a screen
+                  reader announces "Language, group, 5 buttons" before
+                  reading each option. Per-button `aria-label` reads
+                  the human language name (e.g. "Switch language to
+                  Français") instead of the cryptic two-letter code
+                  the visible label shows. `aria-pressed` keeps state
+                  visible to AT alongside the visual active dot. */}
+              <ul
+                role="group"
+                aria-label={t("footer.lang")}
+                className="flex flex-wrap gap-1.5"
+              >
                 {languages.map((l) => {
                   const isActive = l.code === current.code
                   return (
@@ -257,6 +268,7 @@ export function Footer() {
                         data-cursor="hover"
                         data-cursor-label={l.label}
                         aria-pressed={isActive}
+                        aria-label={`Switch language to ${l.label}`}
                         className={cn(
                           "group relative overflow-hidden border bg-background/40 backdrop-blur-sm px-3 py-2 transition-colors",
                           isActive
@@ -321,7 +333,7 @@ export function Footer() {
                   data-cursor="hover"
                   className="group inline-flex items-baseline gap-3 text-foreground/85 hover:text-foreground"
                 >
-                  <span className="font-hud text-foreground/55">01</span>
+                  <span className="font-hud text-foreground/70">01</span>
                   <span className="relative">
                     hello@vaish.studio
                     <span className="absolute -bottom-px left-0 h-px w-0 bg-primary transition-[width] duration-500 group-hover:w-full" />
@@ -334,7 +346,7 @@ export function Footer() {
                   data-cursor="hover"
                   className="group inline-flex items-baseline gap-3 text-foreground/85 hover:text-foreground"
                 >
-                  <span className="font-hud text-foreground/55">02</span>
+                  <span className="font-hud text-foreground/70">02</span>
                   <span className="relative">
                     {t("nav.contact")}
                     <span className="absolute -bottom-px left-0 h-px w-0 bg-primary transition-[width] duration-500 group-hover:w-full" />

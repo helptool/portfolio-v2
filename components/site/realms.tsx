@@ -155,24 +155,24 @@ export function Realms() {
         <div className="pointer-events-none absolute left-0 right-0 top-24 z-20 flex items-start justify-between px-5 md:top-28 md:px-10">
           <div className="flex items-center gap-3">
             <span className="block h-px w-8 bg-foreground/30" />
-            <span className="font-hud text-foreground/55">{t("realms.kicker")}</span>
+            <span className="font-hud text-foreground/70">{t("realms.kicker")}</span>
           </div>
           <div className="flex items-baseline gap-2 text-right">
             <span className="font-display text-5xl leading-none tabular-nums text-foreground md:text-6xl">
               {String(active + 1).padStart(2, "0")}
             </span>
-            <span className="font-hud text-foreground/55">/ {String(realms.length).padStart(2, "0")}</span>
+            <span className="font-hud text-foreground/70">/ {String(realms.length).padStart(2, "0")}</span>
           </div>
         </div>
 
         {/* Bottom HUD */}
         <div className="pointer-events-none absolute bottom-10 left-5 z-20 hidden items-center gap-3 md:flex md:left-10">
           <span className="h-[6px] w-[6px] rounded-full bg-primary animate-pulse-soft" />
-          <span className="font-hud text-foreground/55">{t("realms.scrollHint")}</span>
+          <span className="font-hud text-foreground/70">{t("realms.scrollHint")}</span>
         </div>
 
         <div className="pointer-events-none absolute bottom-10 right-5 z-20 hidden w-[240px] md:block md:right-10">
-          <div className="mb-2 flex items-center justify-between font-hud text-foreground/55">
+          <div className="mb-2 flex items-center justify-between font-hud text-foreground/70">
             <span>{realms[active]?.name}</span>
             <span className="tabular-nums">
               {String(Math.round(((active + 1) / realms.length) * 100)).padStart(2, "0")}%
@@ -226,8 +226,15 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
         </motion.div>
       </div>
 
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,oklch(0.09_0.006_40/0.5)_0%,transparent_25%,transparent_55%,oklch(0.09_0.006_40/0.94)_100%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,oklch(0.09_0.006_40/0.88)_0%,transparent_50%,transparent_100%)] md:bg-[linear-gradient(90deg,oklch(0.09_0.006_40/0.82)_0%,transparent_40%,transparent_100%)]" />
+      {/* Decorative tone gradients sit on top of the RevealImage. They
+          must opt out of pointer events so onPointerMove / Enter /
+          Leave can reach the RevealImage container — that is what
+          drives the cursor-porthole "Untold" reveal. Without
+          pointer-events-none the overlays absorb every move event
+          before it can hit the RevealImage's listeners and the
+          porthole never opens. */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,oklch(0.09_0.006_40/0.5)_0%,transparent_25%,transparent_55%,oklch(0.09_0.006_40/0.94)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,oklch(0.09_0.006_40/0.88)_0%,transparent_50%,transparent_100%)] md:bg-[linear-gradient(90deg,oklch(0.09_0.006_40/0.82)_0%,transparent_40%,transparent_100%)]" />
 
       {/* ghost index */}
       <div aria-hidden className="pointer-events-none absolute bottom-[-4vw] right-[-1vw] z-[5] text-right">
@@ -243,20 +250,48 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
           <div className="flex flex-wrap items-center gap-3">
             <span className="font-hud text-primary">{t("realms.project")} {realm.index}</span>
             <span className="h-px w-8 bg-foreground/30" />
-            <span className="font-hud text-foreground/55">{t(realm.kindKey)}</span>
+            <span className="font-hud text-foreground/70">{t(realm.kindKey)}</span>
           </div>
 
+          {/* Split per-word, then per-letter inside each word. The
+              outer word wrapper carries `whiteSpace: nowrap` so the
+              line-break engine can never split a word like "Wylds"
+              across two lines. Real space text nodes between word
+              wrappers keep the natural break opportunities — without
+              this the browser would break between characters because
+              each per-letter span is inline-block, producing the
+              orphan "s" on the next line that motivated this fix. */}
           <h3 className="display-lg mt-5 text-[clamp(54px,9vw,140px)]">
-            {realm.name.split("").map((c, i) => (
-              <span key={i} className="inline-block overflow-hidden align-baseline [line-height:0.92]">
-                <motion.span
-                  initial={{ y: "115%" }}
-                  animate={{ y: isActive ? "0%" : "115%" }}
-                  transition={{ duration: 0.9, delay: i * 0.03, ease: [0.22, 1, 0.36, 1] }}
-                  className="inline-block will-change-transform"
-                >
-                  {c === " " ? "\u00A0" : c}
-                </motion.span>
+            {realm.name.split(" ").map((word, wi, words) => (
+              <span key={wi} className="inline-block whitespace-nowrap">
+                {word.split("").map((c, i) => {
+                  // Stagger across the whole title regardless of word
+                  // index so the reveal reads as one continuous wave.
+                  const offset =
+                    words
+                      .slice(0, wi)
+                      .reduce((sum, w) => sum + w.length + 1, 0) + i
+                  return (
+                    <span
+                      key={i}
+                      className="inline-block overflow-hidden align-baseline [line-height:0.92]"
+                    >
+                      <motion.span
+                        initial={{ y: "115%" }}
+                        animate={{ y: isActive ? "0%" : "115%" }}
+                        transition={{
+                          duration: 0.9,
+                          delay: offset * 0.03,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="inline-block will-change-transform"
+                      >
+                        {c}
+                      </motion.span>
+                    </span>
+                  )
+                })}
+                {wi < words.length - 1 && " "}
               </span>
             ))}
           </h3>
@@ -283,7 +318,7 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 16 }}
             transition={{ duration: 0.7, delay: 0.5 }}
-            className="mt-6 font-hud text-foreground/55"
+            className="mt-6 font-hud text-foreground/70"
           >
             {t("realms.role")} // <span className="text-foreground">{t(realm.roleKey)}</span>
           </motion.div>
@@ -296,7 +331,7 @@ function RealmSlide({ realm, index, isActive, t }: { realm: (typeof realms)[numb
           >
             {Object.entries(realm.stats).map(([k, v]) => (
               <div key={k} className="flex flex-col gap-1">
-                <dt className="font-hud text-foreground/55">{t(`realms.${k}`)}</dt>
+                <dt className="font-hud text-foreground/70">{t(`realms.${k}`)}</dt>
                 <dd className="font-display text-2xl text-foreground tabular-nums">{v}</dd>
               </div>
             ))}
