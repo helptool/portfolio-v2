@@ -15,6 +15,7 @@
 
 import { useReducedMotion } from "framer-motion"
 import { useEffect, useRef } from "react"
+import { useFinePointer } from "@/lib/hooks"
 
 type Props = {
   children: string
@@ -33,10 +34,16 @@ export function LetterTilt({
 }: Props) {
   const ref = useRef<HTMLSpanElement>(null)
   const reduced = useReducedMotion()
+  // Pure mouse-tracking effect. On touch devices the pointermove listener
+  // never fires productively but the per-character DOM scaffold still
+  // mounts (one inline-block span per letter). On a 143-character subline
+  // that's 143 extra elements + 143 inline transforms the browser has to
+  // composite for nothing — a measurable mobile cost. Bail to plain text.
+  const finePointer = useFinePointer()
 
   // Track cursor in document coordinates via a single window listener.
   useEffect(() => {
-    if (reduced) return
+    if (reduced || !finePointer) return
     const root = ref.current
     if (!root) return
     const letters = Array.from(root.querySelectorAll<HTMLElement>("[data-tilt-char]"))
@@ -82,11 +89,54 @@ export function LetterTilt({
     // switches and the subline string changes (lengths vary 39..143 chars
     // across en/es/fr/ja/hi). Without it, the captured DOM refs would
     // point at unmounted spans and getBoundingClientRect would return 0s.
-  }, [reduced, maxTilt, radius, children])
+  }, [reduced, finePointer, maxTilt, radius, children])
 
   if (reduced) {
-    // Flat fallback :: render plain text, no listeners attached.
+    // Reduced-motion :: render plain text, no animation at all.
     return <span className={className}>{children}</span>
+  }
+
+  /* Touch / coarse-pointer fallback :: previously rendered plain text
+     and dropped the per-letter scaffold entirely. Visually the wordmark
+     felt static on phones — the user reported "many features missing
+     from mobile". Now the touch path renders the same per-letter
+     scaffold but with a tiny CSS-driven continuous wave (no JS, no
+     pointer listeners, ~zero compositor cost). Each letter gets a
+     staggered `--letter-delay` so the wave reads as a slow ripple
+     across the line rather than every letter pulsing in sync. */
+  if (!finePointer) {
+    const words = children.split(/(\s+)/)
+    return (
+      <span className={className} aria-label={children}>
+        {words.map((word, wi) => {
+          if (/^\s+$/.test(word)) {
+            return <span key={`s-${wi}`}>{word}</span>
+          }
+          const chars = Array.from(word)
+          return (
+            <span
+              key={`w-${wi}`}
+              aria-hidden
+              style={{ display: "inline-block", whiteSpace: "nowrap" }}
+            >
+              {chars.map((ch, ci) => (
+                <span
+                  key={ci}
+                  className="inline-block animate-letter-wave"
+                  style={
+                    {
+                      "--letter-delay": `${((wi * 7 + ci) % 12) * 0.12}s`,
+                    } as React.CSSProperties
+                  }
+                >
+                  {ch}
+                </span>
+              ))}
+            </span>
+          )
+        })}
+      </span>
+    )
   }
 
   // Split into words first, then characters within each word. This is the

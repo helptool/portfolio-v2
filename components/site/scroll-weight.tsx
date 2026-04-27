@@ -15,6 +15,7 @@
 import { motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from "framer-motion"
 import { useEffect } from "react"
 import type { JSX } from "react"
+import { useCoarsePointer } from "@/lib/hooks"
 
 type Props = {
   children: React.ReactNode
@@ -47,6 +48,13 @@ export function ScrollWeight({
   extraAxes = '"opsz" 96',
 }: Props) {
   const reduced = useReducedMotion()
+  // Variable-font axis writes are paint-bound :: the browser has to re-shape
+  // and re-paint the whole text run on every scroll tick. On mobile this is
+  // the single biggest scroll-jank source on the manifesto. Drop to a flat
+  // weight on coarse-pointer devices — visually identical at rest, only the
+  // velocity reaction is missing, which 99% of mobile users wouldn't notice
+  // anyway since they're using momentum-scroll instead of a wheel flick.
+  const coarse = useCoarsePointer()
   const weight = useMotionValue(min)
   const smoothed = useSpring(weight, { stiffness: 130, damping: 22, mass: 0.4 })
   // Variable-font axis. `wght` reads continuous values in Bodoni Moda's
@@ -57,7 +65,7 @@ export function ScrollWeight({
   const variation = useMotionTemplate`"wght" ${smoothed}, ${extraAxes}`
 
   useEffect(() => {
-    if (reduced) return
+    if (reduced || coarse) return
     let last = window.scrollY
     let lastTime = performance.now()
     let raf = 0
@@ -89,11 +97,21 @@ export function ScrollWeight({
       window.removeEventListener("scroll", onScroll)
       if (raf) cancelAnimationFrame(raf)
     }
-  }, [reduced, min, max, threshold, weight])
+  }, [reduced, coarse, min, max, threshold, weight])
 
-  if (reduced) {
+  if (reduced || coarse) {
     const Tag = as as keyof JSX.IntrinsicElements
-    return <Tag className={className} style={{ fontWeight: min }}>{children}</Tag>
+    // Flat weight :: identical to the at-rest visual state on desktop, just
+    // without the velocity reaction. Also keeps the inherited optical-size
+    // axis intact so the text doesn't fall back to non-variable rendering.
+    return (
+      <Tag
+        className={className}
+        style={{ fontVariationSettings: `"wght" ${min}, ${extraAxes}` }}
+      >
+        {children}
+      </Tag>
+    )
   }
 
   const MotionTag = motion[as as "span"] as typeof motion.span

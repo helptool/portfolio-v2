@@ -26,6 +26,7 @@ import Image, { type ImageProps } from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useReducedMotion } from "framer-motion"
 import { SHIMMER } from "@/lib/shimmer"
+import { useFinePointer } from "@/lib/hooks"
 import { cn } from "@/lib/utils"
 
 type Props = Omit<ImageProps, "placeholder" | "blurDataURL" | "onLoad"> & {
@@ -35,6 +36,11 @@ type Props = Omit<ImageProps, "placeholder" | "blurDataURL" | "onLoad"> & {
   hoverWarp?: number
   /** RGB split max in normalized UV. Default 0.012. */
   chromaticAberration?: number
+  /** When true, hovering animates BOTH warp and chromatic aberration toward
+      0 instead of toward `baseWarp + hoverWarp`. Idle = full effect, hover
+      = clean. Used by the manifesto portrait so the visitor can "see
+      through" the shader pass by hovering. */
+  clearOnHover?: boolean
 }
 
 const VERT = `
@@ -146,6 +152,7 @@ export function ShaderImage({
   baseWarp = 0.04,
   hoverWarp = 0.06,
   chromaticAberration = 0.012,
+  clearOnHover = false,
   className,
   alt,
   ...imageProps
@@ -156,11 +163,19 @@ export function ShaderImage({
   const [imgLoaded, setImgLoaded] = useState(false)
   const [shaderActive, setShaderActive] = useState(false)
   const reduced = useReducedMotion()
+  // The displacement is a hover/proximity reaction. On a touch device
+  // there's no cursor to displace toward, the shader just runs the
+  // ambient simplex warp — which is invisible to most users but burns a
+  // continuous rAF loop, an extra GPU pass, and one full-viewport canvas
+  // composite per frame. Skip the shader entirely on coarse pointers and
+  // let the underlying <Image> render flat.
+  const finePointer = useFinePointer()
+  const shaderEnabled = !reduced && finePointer
 
   /* Boot the shader once the source image has loaded AND reduced-motion is
-     not requested AND WebGL is supported. */
+     not requested AND WebGL is supported AND we have a fine pointer. */
   useEffect(() => {
-    if (reduced || !imgLoaded) return
+    if (!shaderEnabled || !imgLoaded) return
     const canvas = canvasRef.current
     const container = containerRef.current
     const img = imgRef.current
@@ -236,8 +251,20 @@ export function ShaderImage({
     let mouseY = 0.5
     let targetMouseX = 0.5
     let targetMouseY = 0.5
-    let warp = baseWarp
-    let targetWarp = baseWarp
+    /* Idle vs hover targets :: when `clearOnHover` is true, the idle
+       state IS the visible effect (warp + aberration both at full)
+       and hovering animates them toward zero. When false (default),
+       the original behaviour holds: idle is calm, hovering ramps the
+       warp up. */
+    const idleWarp = clearOnHover ? baseWarp : baseWarp
+    const idleAberration = chromaticAberration
+    const hoverWarpTarget = clearOnHover ? 0 : baseWarp + hoverWarp
+    const hoverAberrationTarget = clearOnHover ? 0 : chromaticAberration
+
+    let warp = idleWarp
+    let targetWarp = idleWarp
+    let aberration = idleAberration
+    let targetAberration = idleAberration
     let dpr = Math.min(2, window.devicePixelRatio || 1)
     let rafId = 0
     let aspect = 1
@@ -259,12 +286,14 @@ export function ShaderImage({
       const r = container.getBoundingClientRect()
       targetMouseX = (e.clientX - r.left) / r.width
       targetMouseY = (e.clientY - r.top) / r.height
-      targetWarp = baseWarp + hoverWarp
+      targetWarp = hoverWarpTarget
+      targetAberration = hoverAberrationTarget
     }
     const onLeave = () => {
       targetMouseX = 0.5
       targetMouseY = 0.5
-      targetWarp = baseWarp
+      targetWarp = idleWarp
+      targetAberration = idleAberration
     }
 
     container.addEventListener("pointermove", onMove)
@@ -272,13 +301,22 @@ export function ShaderImage({
     const ro = new ResizeObserver(resize)
     ro.observe(container)
 
+    /* IntersectionObserver pause :: the manifesto portrait is below the
+       fold; on a long scroll most of the time the canvas is offscreen.
+       Idling the rAF saves ~1ms of GPU + JS per frame. Resume on re-enter. */
+    let inView = true
     const start = performance.now()
     const render = () => {
+      if (!inView) {
+        rafId = 0
+        return
+      }
       const t = (performance.now() - start) / 1000
       // Smooth mouse + warp toward target — feels less twitchy than raw input.
       mouseX += (targetMouseX - mouseX) * 0.08
       mouseY += (targetMouseY - mouseY) * 0.08
       warp += (targetWarp - warp) * 0.06
+      aberration += (targetAberration - aberration) * 0.06
 
       gl.viewport(0, 0, canvas.width, canvas.height)
       gl.clearColor(0, 0, 0, 0)
@@ -294,7 +332,7 @@ export function ShaderImage({
       gl.uniform2f(uMouse, mouseX, mouseY)
       gl.uniform1f(uTime, t)
       gl.uniform1f(uWarp, warp)
-      gl.uniform1f(uAberration, chromaticAberration)
+      gl.uniform1f(uAberration, aberration)
       gl.uniform1f(uAspect, aspect)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
       rafId = requestAnimationFrame(render)
@@ -302,8 +340,25 @@ export function ShaderImage({
     rafId = requestAnimationFrame(render)
     setShaderActive(true)
 
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          inView = entry.isIntersecting
+          if (inView && !rafId) {
+            rafId = requestAnimationFrame(render)
+          } else if (!inView && rafId) {
+            cancelAnimationFrame(rafId)
+            rafId = 0
+          }
+        }
+      },
+      { rootMargin: "100px" },
+    )
+    io.observe(container)
+
     return () => {
-      cancelAnimationFrame(rafId)
+      if (rafId) cancelAnimationFrame(rafId)
+      io.disconnect()
       ro.disconnect()
       container.removeEventListener("pointermove", onMove)
       container.removeEventListener("pointerleave", onLeave)
@@ -314,7 +369,7 @@ export function ShaderImage({
       gl.deleteShader(frag)
       setShaderActive(false)
     }
-  }, [reduced, imgLoaded, baseWarp, hoverWarp, chromaticAberration])
+  }, [shaderEnabled, imgLoaded, baseWarp, hoverWarp, chromaticAberration, clearOnHover])
 
   return (
     <div
@@ -348,7 +403,7 @@ export function ShaderImage({
         }}
       />
       {/* Canvas overlay, painted on top of the image once shader is live. */}
-      {!reduced && (
+      {shaderEnabled && (
         <canvas
           ref={canvasRef}
           aria-hidden

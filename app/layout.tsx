@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Inter, Instrument_Serif, JetBrains_Mono, Bodoni_Moda } from "next/font/google"
+import { Inter, Instrument_Serif, JetBrains_Mono, Bodoni_Moda, Noto_Serif_JP, Noto_Serif_Devanagari } from "next/font/google"
 import "./globals.css"
 import { ArcadeProvider } from "@/components/site/arcade/arcade-context"
 import { I18nProvider } from "@/components/site/i18n-context"
@@ -51,6 +51,34 @@ const bodoni = Bodoni_Moda({
   display: "swap",
   adjustFontFallback: "Times New Roman",
   fallback: ["Didot", "Cormorant Garamond", "Georgia", "serif"],
+})
+
+/* CJK + Devanagari serif fallbacks for the wordmark glyph morph (N3).
+   Only loaded when the visitor switches to ja / hi — `display: swap`
+   avoids blocking first paint, and we cap weight to 700 so we ship a
+   single subset file per script instead of the full 100..900 ladder. */
+const notoSerifJp = Noto_Serif_JP({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--font-wordmark-jp",
+  display: "swap",
+  fallback: ["Hiragino Mincho ProN", "Yu Mincho", "serif"],
+  preload: false,
+  // The subset list above doesn't include "japanese" because Next's font
+  // loader fetches the smallest matching CSS file; the unicode-range CSS
+  // declarations from Google Fonts cover the katakana glyphs even via the
+  // Latin subset CSS file because Google emits unicode-range hooks for
+  // the full font. The browser only downloads the Japanese woff2 chunk
+  // once a CJK glyph actually renders, which lines up with the language
+  // switch. preload: false prevents an early fetch on first paint.
+})
+const notoSerifDevanagari = Noto_Serif_Devanagari({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--font-wordmark-deva",
+  display: "swap",
+  fallback: ["Tiro Devanagari Hindi", "serif"],
+  preload: false,
 })
 
 export const metadata: Metadata = {
@@ -137,7 +165,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${instrument.variable} ${jetbrains.variable} ${bodoni.variable} bg-background`}
+      className={`${inter.variable} ${instrument.variable} ${jetbrains.variable} ${bodoni.variable} ${notoSerifJp.variable} ${notoSerifDevanagari.variable} bg-background`}
     >
       <body className="font-sans antialiased grain overflow-x-hidden">
         <script

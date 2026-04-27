@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform, useReducedMotion, useSpring } from "framer-motion"
 import { useRef } from "react"
 import { useT } from "./i18n-context"
+import { DividerFluid } from "./divider-fluid"
 
 /**
  * RuneDivider :: cinematic interlude between sections.
@@ -93,6 +94,12 @@ export function RuneDivider({
 
       {/* Faint grid scribe so the divider has architecture */}
       <div className="grid-lines-fine pointer-events-none absolute inset-0 opacity-[0.35] mask-fade-x" />
+
+      {/* WebGL fluid band :: copper-toned noise ribbon under the centre
+          sigil. Mounted only on fine pointers (mouse / trackpad) so touch
+          devices keep their existing flat-CSS divider for smoothness.
+          Self-pauses when off-screen via IntersectionObserver. */}
+      <DividerFluid className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-[180px]" />
 
       <div className="relative mx-auto flex max-w-[1600px] items-center gap-6 px-5 py-16 md:px-10 md:py-24">
         {/* Left rule */}

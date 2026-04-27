@@ -60,7 +60,7 @@ export default function NotFound() {
         You wandered off the realm path.
       </h1>
 
-      <p className="mt-4 max-w-[520px] text-center text-[15px] leading-relaxed text-foreground/55">
+      <p className="mt-4 max-w-[520px] text-center text-[15px] leading-relaxed text-foreground/70">
         This page was never carved into the chronicle. The realm only remembers
         the seven pillars — the rest is fog. Return to the wordmark, then
         choose a path that exists.

@@ -4,6 +4,7 @@ import Image, { type ImageProps } from "next/image"
 import { useRef, useState } from "react"
 import { useReducedMotion } from "framer-motion"
 import { SHIMMER } from "@/lib/shimmer"
+import { useFinePointer } from "@/lib/hooks"
 import { cn } from "@/lib/utils"
 
 /* ---------------------------------------------------------------------------
@@ -58,30 +59,66 @@ export function RevealImage({
   const ref = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(false)
   const reduced = useReducedMotion()
+  /* Cursor porthole on a desktop pointer is the headline interaction.
+     On a touch device the pointermove path obviously can't fire, but
+     we don't want the porthole to vanish entirely — the user reported
+     "many features missing from mobile". So on touch we still mount
+     the reveal layer and bind it to `pointerdown` instead: tap-and-
+     hold on the image opens the porthole at the touch point, lifting
+     the finger closes it. Same affordance, just gesture-driven. */
+  const finePointer = useFinePointer()
+  const desktopEnabled = !reduced && finePointer
+  const touchEnabled = !reduced && !finePointer
+  const enabled = desktopEnabled || touchEnabled
 
-  const updatePosition = (e: React.PointerEvent<HTMLDivElement>) => {
+  const writePos = (clientX: number, clientY: number) => {
     const r = ref.current?.getBoundingClientRect()
     if (!r) return
-    const x = ((e.clientX - r.left) / r.width) * 100
-    const y = ((e.clientY - r.top) / r.height) * 100
+    const x = ((clientX - r.left) / r.width) * 100
+    const y = ((clientY - r.top) / r.height) * 100
     ref.current!.style.setProperty("--cx", `${x}%`)
     ref.current!.style.setProperty("--cy", `${y}%`)
   }
+  const updatePosition = (e: React.PointerEvent<HTMLDivElement>) =>
+    writePos(e.clientX, e.clientY)
 
   return (
     <div
       ref={ref}
-      data-cursor={reduced ? undefined : "view"}
-      data-cursor-label={reduced ? undefined : revealLabel || "Untold"}
-      onPointerEnter={() => !reduced && setActive(true)}
-      onPointerLeave={() => !reduced && setActive(false)}
-      onPointerMove={reduced ? undefined : updatePosition}
+      data-cursor={desktopEnabled ? "view" : undefined}
+      data-cursor-label={desktopEnabled ? revealLabel || "Untold" : undefined}
+      onPointerEnter={desktopEnabled ? () => setActive(true) : undefined}
+      /* `onPointerLeave` is wired for both paths. On desktop it closes
+         the porthole when the cursor leaves the element. On touch it
+         closes the porthole when the finger drags off the element —
+         without this, dragging horizontally across realm slides leaves
+         the porthole stuck visible because `pointerup` never fires
+         inside the element. (We deliberately don't use
+         `setPointerCapture` because that would prevent the parent
+         carousel from receiving the swipe gesture.) */
+      onPointerLeave={enabled ? () => setActive(false) : undefined}
+      onPointerMove={desktopEnabled ? updatePosition : undefined}
+      onPointerDown={
+        touchEnabled
+          ? (e) => {
+              writePos(e.clientX, e.clientY)
+              setActive(true)
+            }
+          : undefined
+      }
+      onPointerUp={touchEnabled ? () => setActive(false) : undefined}
+      onPointerCancel={touchEnabled ? () => setActive(false) : undefined}
       className={cn("relative overflow-hidden", className)}
       style={
         {
           "--cx": "50%",
           "--cy": "50%",
           "--porthole": `${portholeSize}px`,
+          /* Stop the browser from treating the image as a draggable
+             element on touch — without this, a tap-hold on iOS triggers
+             the system image preview popover and steals the gesture. */
+          touchAction: touchEnabled ? "manipulation" : undefined,
+          WebkitTouchCallout: touchEnabled ? "none" : undefined,
         } as React.CSSProperties
       }
     >
@@ -97,7 +134,7 @@ export function RevealImage({
       />
 
       {/* Reveal layer :: the alternate, masked to a soft circle. */}
-      {!reduced && (
+      {enabled && (
         <div
           aria-hidden={!active}
           className="pointer-events-none absolute inset-0 transition-opacity duration-300 ease-out"
@@ -127,7 +164,7 @@ export function RevealImage({
       {/* Cursor-following hint ring :: a thin copper outline traces the
           porthole edge on the active state. Pointer-events:none so it
           never interferes with hover. */}
-      {!reduced && (
+      {enabled && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 transition-opacity duration-200"

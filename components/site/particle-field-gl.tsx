@@ -121,9 +121,17 @@ export function ParticleFieldGL({
     /* ----- shader program ----- */
     const vs = compileShader(gl, gl.VERTEX_SHADER, VERT)
     const fs = compileShader(gl, gl.FRAGMENT_SHADER, FRAG)
-    if (!vs || !fs) return
+    if (!vs || !fs) {
+      if (vs) gl.deleteShader(vs)
+      if (fs) gl.deleteShader(fs)
+      return
+    }
     const program = gl.createProgram()
-    if (!program) return
+    if (!program) {
+      gl.deleteShader(vs)
+      gl.deleteShader(fs)
+      return
+    }
     gl.attachShader(program, vs)
     gl.attachShader(program, fs)
     gl.linkProgram(program)
@@ -201,6 +209,7 @@ export function ParticleFieldGL({
     let last = performance.now()
     let suspended = false
     let blownFrames = 0
+    let inView = true
 
     const draw = (tNow: number) => {
       const t = tNow / 1000
@@ -225,7 +234,7 @@ export function ParticleFieldGL({
     }
 
     const tick = (tNow: number) => {
-      if (suspended) return
+      if (suspended || !inView) return
       const dt = tNow - last
       last = tNow
 
@@ -257,14 +266,39 @@ export function ParticleFieldGL({
         suspended = false
         blownFrames = 0
         last = performance.now()
-        if (!raf) raf = requestAnimationFrame(tick)
+        if (!raf && inView) raf = requestAnimationFrame(tick)
       }
     }
     document.addEventListener("visibilitychange", onVis)
 
+    /* IntersectionObserver-based pause :: when the hero scrolls fully out
+       of view the GPU shouldn't keep drawing 1500 points the user can't
+       see. This is the single biggest mobile-scroll cost — the canvas is
+       large and additive-blended, so even off-screen draws cost a full
+       compositor pass. Resume on re-intersect. */
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          inView = entry.isIntersecting
+          if (inView) {
+            suspended = false
+            blownFrames = 0
+            last = performance.now()
+            if (!raf && !document.hidden) raf = requestAnimationFrame(tick)
+          } else if (raf) {
+            cancelAnimationFrame(raf)
+            raf = 0
+          }
+        }
+      },
+      { rootMargin: "100px" },
+    )
+    io.observe(canvas)
+
     return () => {
       if (raf) cancelAnimationFrame(raf)
       document.removeEventListener("visibilitychange", onVis)
+      io.disconnect()
       ro.disconnect()
       gl.deleteBuffer(seedBuf)
       gl.deleteBuffer(sizeBuf)

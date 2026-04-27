@@ -75,7 +75,7 @@ export function Classes() {
         <div className="grid grid-cols-12 items-end gap-6">
           <div className="col-span-12 flex items-center gap-3 md:col-span-3">
             <span className="block h-px w-8 bg-foreground/30" />
-            <span className="font-hud text-foreground/55">{t("classes.kicker")}</span>
+            <span className="font-hud text-foreground/70">{t("classes.kicker")}</span>
           </div>
           <div className="col-span-12 md:col-span-9">
             <h2 className="font-wordmark-tight text-[clamp(44px,7.5vw,120px)] font-semibold leading-[0.95]">
@@ -148,7 +148,7 @@ export function Classes() {
                     <span
                       className={cn(
                         "transition-colors",
-                        isActive ? "text-foreground" : "text-foreground/55",
+                        isActive ? "text-foreground" : "text-foreground/70",
                       )}
                     >
                       {t(c.roleKey).toUpperCase()}
@@ -160,7 +160,7 @@ export function Classes() {
                     <span
                       className={cn(
                         "relative flex h-14 w-14 shrink-0 items-center justify-center transition-colors duration-500",
-                        isActive ? "text-primary" : "text-foreground/55 group-hover:text-foreground/85",
+                        isActive ? "text-primary" : "text-foreground/70 group-hover:text-foreground/85",
                       )}
                     >
                       {/* Subtle rotating ring around the icon when active */}
@@ -186,7 +186,7 @@ export function Classes() {
                       <p
                         className={cn(
                           "italic-serif mt-1.5 text-base leading-snug transition-colors",
-                          isActive ? "text-foreground/85" : "text-foreground/55",
+                          isActive ? "text-foreground/85" : "text-foreground/70",
                         )}
                       >
                         {t(c.kickerKey)}
@@ -199,7 +199,7 @@ export function Classes() {
                   <div className="mt-1 flex flex-col gap-2">
                     {c.stats.map((s) => (
                       <div key={s.label} className="flex items-center gap-3">
-                        <span className="font-hud min-w-[120px] text-foreground/55">{s.label}</span>
+                        <span className="font-hud min-w-[120px] text-foreground/70">{s.label}</span>
                         <div className="relative h-[2px] flex-1 overflow-hidden bg-foreground/10">
                           <motion.span
                             initial={{ scaleX: 0 }}
@@ -225,7 +225,7 @@ export function Classes() {
                     <span
                       className={cn(
                         "inline-flex h-6 w-6 items-center justify-center border transition-all duration-500",
-                        isActive ? "border-primary bg-primary text-primary-foreground" : "border-foreground/25 text-foreground/55",
+                        isActive ? "border-primary bg-primary text-primary-foreground" : "border-foreground/25 text-foreground/70",
                       )}
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-3 w-3">
@@ -307,7 +307,7 @@ export function Classes() {
                   className="pointer-events-none absolute inset-x-4 bottom-4 z-30 flex items-end justify-between gap-3"
                 >
                   <div>
-                    <span className="font-hud text-foreground/55">
+                    <span className="font-hud text-foreground/70">
                       {t(current.roleKey).toUpperCase()}
                     </span>
                     <p className="italic-serif mt-1 text-2xl leading-tight text-foreground md:text-3xl">
@@ -339,7 +339,7 @@ export function Classes() {
                     <span className="block h-12 w-12">{disciplineIcons[current.id]}</span>
                   </span>
                   <div>
-                    <span className="font-hud text-foreground/55">
+                    <span className="font-hud text-foreground/70">
                       {t("classes.dossierOpen").toUpperCase()} //{" "}
                       {String(active + 1).padStart(2, "0")}
                     </span>
@@ -356,7 +356,7 @@ export function Classes() {
 
                 {/* Toolkit */}
                 <div className="flex flex-col gap-3">
-                  <span className="font-hud text-foreground/55">
+                  <span className="font-hud text-foreground/70">
                     {t("classes.toolkit")} // {String(current.tools.length).padStart(2, "0")}
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -377,7 +377,7 @@ export function Classes() {
 
                 {/* Deployed-in :: linked realms */}
                 <div className="flex flex-col gap-3">
-                  <span className="font-hud text-foreground/55">
+                  <span className="font-hud text-foreground/70">
                     {t("classes.deployedIn")}
                   </span>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -416,7 +416,7 @@ export function Classes() {
                               <span className="font-wordmark-tight text-sm font-semibold text-foreground">
                                 {realm.name}
                               </span>
-                              <span className="font-hud truncate text-foreground/55">
+                              <span className="font-hud truncate text-foreground/70">
                                 {t(realm.kindKey)}
                               </span>
                             </div>

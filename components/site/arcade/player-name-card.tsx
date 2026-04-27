@@ -46,7 +46,7 @@ export function PlayerNameCard() {
           </span>
         </span>
         <div className="min-w-0">
-          <div className="font-hud text-foreground/55">Player Seal</div>
+          <div className="font-hud text-foreground/70">Player Seal</div>
           <div className="font-wordmark-tight text-base sm:text-lg font-semibold text-foreground truncate">
             {playerName || "Unnamed Wanderer"}
           </div>
